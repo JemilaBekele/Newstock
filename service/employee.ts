@@ -1,0 +1,258 @@
+/* eslint-disable import/no-unresolved */
+
+import { IEmployee } from '@/models/employee';
+import { api } from './api';
+import { IncomingMessage } from 'http';
+import { axiosWithAuth } from './cli';
+
+export interface GetParams {
+  page?: number;
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+}
+
+interface EmployeeResponse {
+  success: boolean;
+  count: number;
+  users: IEmployee[];
+}
+
+export const getAllEmployees = async ({
+  page = 1,
+  limit = 10,
+  startDate,
+  endDate
+}: GetParams = {}) => {
+  try {
+    const query = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString()
+    });
+
+    // Add date filters to query if they exist
+    if (startDate) {
+      query.append('startDate', startDate);
+    }
+    if (endDate) {
+      query.append('endDate', endDate);
+    }
+
+    const url = `users?${query}`;
+
+    const response = await api.get<EmployeeResponse>(url);
+    const employees = response.data.users;
+
+    return {
+      employees: employees,
+      totalCount: response.data.count ?? employees.length,
+      success: response.data.success
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getAllEmploy = async (req?: IncomingMessage) => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+    const response = await axiosInstance.get(`/users`);
+    return response.data.users;
+  } catch (error) {
+    throw error;
+  }
+};
+export const getUserProfile = async (req?: IncomingMessage) => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+    const response = await axiosInstance.get(`/user/profile/view`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+export const changePassword = async (
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+  req?: IncomingMessage
+) => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+    const response = await axiosInstance.put(
+      `/user/${userId}/change-password`,
+      {
+        currentPassword,
+        newPassword
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+export const resetUserPassword = async (
+  userId: string,
+  newPassword: string,
+  req?: IncomingMessage
+) => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+    const response = await axiosInstance.put(`/user/reset-password`, {
+      newPassword
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getAlldep = async (req?: IncomingMessage) => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+    const response = await axiosInstance.get(`/user/assignd/employee`);
+    return response.data.users;
+  } catch (error) {
+    throw error;
+  }
+};
+export const fetchUserInvoices = async (req?: IncomingMessage) => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+    const response = await axiosInstance.get('/invoices/fetch/userinvoice');
+    return response.data.invoices;
+  } catch (error) {
+    throw error;
+  }
+};
+export const getAllTen = async (req?: IncomingMessage) => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+    const response = await axiosInstance.get(`/user/roletentant`);
+    return response.data.users;
+  } catch (error) {
+    throw error;
+  }
+};
+export const getAllTentant = async ({
+  page = 1,
+  limit = 10,
+  startDate,
+  endDate
+}: GetParams = {}) => {
+  try {
+    const query = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString()
+    });
+
+    // Add date filters to query if they exist
+    if (startDate) {
+      query.append('startDate', startDate);
+    }
+    if (endDate) {
+      query.append('endDate', endDate);
+    }
+
+    const url = `/user/roletentant?${query}`;
+
+    const response = await api.get<EmployeeResponse>(url);
+    const employees = response.data.users;
+
+    return {
+      employees: employees,
+      totalCount: response.data.count ?? employees.length,
+      success: response.data.success
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getAllnotconfirm = async (page = 1, limit = 10) => {
+  const query = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString()
+  });
+
+  try {
+    const response = await api.get(`/user/confirmfalse?${query}`);
+
+    // Extract bicycles from response
+    const { users = [] } = response.data || {};
+
+    return {
+      data: users as IEmployee[],
+      totalCount: users.length
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getEmployeeById = async (id: string | number) => {
+  try {
+    // Send `id` as a query parameter
+    const response = await api.get(`/users/${id}`);
+    return response.data.user;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getEmployeeId = async (
+  id: string | number,
+  req?: IncomingMessage
+) => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+    // Send `id` as a query parameter
+    const response = await axiosInstance.get(`/user/${id}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const createEmployee = async (
+  employeeData: any,
+  req?: IncomingMessage
+) => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+    const response = await axiosInstance.post('/register', employeeData);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const updateEmployee = async (
+  id: string,
+  formData: any,
+  req?: IncomingMessage
+) => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+    const response = await axiosInstance.put(`/users/${id}`, formData);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const deleteUser = async (
+  id: string | number,
+  req?: IncomingMessage
+) => {
+  if (!id) {
+    throw new Error('Service ID is required');
+  }
+  try {
+    const axiosInstance = axiosWithAuth(req);
+    const response = await axiosInstance.delete(`/user/${id}`);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};

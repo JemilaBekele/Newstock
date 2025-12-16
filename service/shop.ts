@@ -1,0 +1,159 @@
+import { IncomingMessage } from 'http';
+import { axiosWithAuth } from './cli';
+import { api } from './api';
+import { IShop } from '@/models/shop';
+import { GetParams } from './roleService';
+import { IProductBatch } from '@/models/Product';
+
+interface locationResponse {
+  success: boolean;
+  count: number;
+  shops: IShop[];
+}
+
+export const getAllshop = async ({ page = 1, limit = 10 }: GetParams = {}) => {
+  try {
+    const query = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString()
+    });
+
+    const url = `shops?${query}`;
+
+    const response = await api.get<locationResponse>(url);
+    const shops = response.data.shops;
+
+    return {
+      shops: shops,
+      totalCount: response.data.count ?? shops.length,
+      success: response.data.success
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+// Get all shops
+export const getShops = async (req?: IncomingMessage) => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+    const response = await axiosInstance.get(`/shops`);
+    return response.data.shops as IShop[];
+  } catch (error) {
+    throw error;
+  }
+};
+export const getShopsapi = async () => {
+  try {
+    const response = await api.get(`/shops`);
+    return response.data.shops as IShop[];
+  } catch (error) {
+    throw error;
+  }
+};
+export const getShopsBasedOnUser = async (req?: IncomingMessage) => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+    const response = await axiosInstance.get(`/shops/based/user`);
+    return response.data.shops as IShop[];
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Get a shop by ID
+export const getShopById = async (id: string, req?: IncomingMessage) => {
+  try {
+    const axiosInstance = req ? axiosWithAuth(req) : api;
+    const response = await axiosInstance.get(`/shops/${id}`);
+    return response.data.shop as IShop;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Create a shop
+export const createShop = async (
+  data: any | FormData,
+  req?: IncomingMessage
+) => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+
+    const config =
+      data instanceof FormData
+        ? { headers: { 'Content-Type': 'multipart/form-data' } }
+        : {};
+
+    const response = await axiosInstance.post(`/shops`, data, config);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Update a shop
+export const updateShop = async (
+  id: string,
+  data: Partial<IShop> | FormData,
+  req?: IncomingMessage
+) => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+
+    const config =
+      data instanceof FormData
+        ? { headers: { 'Content-Type': 'multipart/form-data' } }
+        : {};
+
+    const response = await axiosInstance.put(`/shops/${id}`, data, config);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Delete a shop
+export const deleteShop = async (id: string, req?: IncomingMessage) => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+    const response = await axiosInstance.delete(`/shops/${id}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+export interface IBatchesResponse {
+  batches: IProductBatch[];
+  count: number;
+}
+
+export const getAvailableBatchesByProductAndShop = async (
+  shopId: string,
+  productId: string,
+  req?: IncomingMessage
+) => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+    const response = await axiosInstance.get(
+      `/shops/${shopId}/products/${productId}/batches`
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+export const UsergetAvailableBatchesByProductAndShop = async (
+  shopId: string,
+  productId: string,
+  req?: IncomingMessage
+): Promise<IBatchesResponse> => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+    const response = await axiosInstance.get(
+      `/shops/${shopId}/products/${productId}/batches/user/based`
+    );
+    return response.data.batches as IBatchesResponse;
+  } catch (error) {
+    throw error;
+  }
+};
