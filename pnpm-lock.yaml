@@ -117,7 +117,7 @@ importers:
         specifier: ^0.18.5
         version: 0.18.5
       zod:
-        specifier: ^3.22.4
+        specifier: ^3.25.51
         version: 3.25.76
       zustand:
         specifier: ^5.0.9
