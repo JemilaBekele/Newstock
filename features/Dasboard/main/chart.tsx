@@ -21,6 +21,20 @@ import {
 } from '@/components/ui/chart';
 import { getSellStatusChartApi } from '@/service/Report';
 
+// 橙色调色板 - 从深到浅的橙色渐变
+const ORANGE_PALETTE = [
+  '#E85D04', // 深橙色 - 用于最高值
+  '#F48C06', // 金色橙色
+  '#FF6B35', // 亮橙色
+  '#FF8C42', // 中等橙色
+  '#FF9F1C', // 橙黄色
+  '#FFA552', // 浅橙色
+  '#FFB347', // 珊瑚橙
+  '#FFC085', // 非常浅的橙色
+  '#FFCC99', // 浅米色橙
+  '#FFE5CC', // 极浅橙色
+];
+
 interface ChartDataItem {
   status: string;
   amount: number;
@@ -56,8 +70,24 @@ export function SellStatusChart() {
         const data: SellStatusChartData = await getSellStatusChartApi();
 
         if (data.success) {
-          setChartData(data.chartData);
-          setChartConfig(data.chartConfig);
+          const sortedData = [...data.chartData].sort((a, b) => b.amount - a.amount);
+          
+          const orangeChartData = sortedData.map((item, index) => ({
+            ...item,
+            fill: ORANGE_PALETTE[Math.min(index, ORANGE_PALETTE.length - 1)]
+          }));
+
+          setChartData(orangeChartData);
+          
+          const updatedConfig: ChartConfig = {};
+          orangeChartData.forEach((item, index) => {
+            updatedConfig[item.status] = {
+              label: item.label,
+              color: ORANGE_PALETTE[Math.min(index, ORANGE_PALETTE.length - 1)]
+            };
+          });
+          setChartConfig(updatedConfig);
+          
           setTotalAmount(data.totalAmount);
           setTotalTransactions(data.totalTransactions);
         }
@@ -118,9 +148,16 @@ export function SellStatusChart() {
               nameKey='status'
               label={false} // Remove labels from the pie slices
               labelLine={false}
+              strokeWidth={2}
+              stroke="#FFF" // 保持白色描边
             >
               {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.fill} />
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={entry.fill} // 
+                  stroke="#FFF" // 
+                  strokeWidth={2}
+                />
               ))}
             </Pie>
           </PieChart>
@@ -136,7 +173,7 @@ export function SellStatusChart() {
           {chartData.filter((item) => item.count > 0).length} status categories
         </div>
 
-        {/* Status Legend */}
+        {/* Status Legend - */}
         <div className='mt-4 grid w-full grid-cols-2 gap-2'>
           {chartData
             .filter((item) => item.count > 0)
@@ -147,10 +184,9 @@ export function SellStatusChart() {
               >
                 <div
                   className='h-3 w-3 rounded-full'
-                  style={{ backgroundColor: item.fill }}
+                  style={{ backgroundColor: item.fill }} // legend
                 />
                 <span className='font-medium'>{item.label}:</span>
-                <span>${item.amount.toLocaleString()}</span>
                 <span className='text-muted-foreground'>({item.count})</span>
               </div>
             ))}
