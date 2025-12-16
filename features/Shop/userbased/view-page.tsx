@@ -1,5 +1,5 @@
 import { getSellById } from '@/service/Sell';
-import { getProducts } from '@/service/Product'; // make sure this exists
+import { getProductsnew } from '@/service/Product'; // make sure this exists
 import SalesForm from './form';
 import { ISell } from '@/models/Sell';
 import { IProduct } from '@/models/Product'; // adjust if needed
@@ -22,7 +22,7 @@ export default async function UserSalesViewPage({
   }
 
   // Fetch products for the form
-  const products: IProduct[] = await getProducts();
+  const products: IProduct[] = await getProductsnew();
 
   return (
     <SalesForm initialData={sell} pageTitle={pageTitle} products={products} />

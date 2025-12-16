@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';
 import { Modal } from '@/components/ui/modal'; // Import your Modal component
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -41,9 +41,9 @@ import { ICustomer } from '@/models/customer';
 import { updateSell } from '@/service/Sell';
 import { getCustomer } from '@/service/customer';
 import { ActivegetProducts, getProductByShops } from '@/service/Product';
+import { getShopsBasedOnUser } from '@/service/shop';
 import { IShop } from '@/models/shop';
 import { IProductShopAvailability } from '../list';
-import { getShopsBasedOnUser } from '@/service/shop';
 
 // Schema for sell update (excluding status fields)
 const formSchema = z.object({
@@ -108,22 +108,34 @@ export default function SalesUpdateForm({
     )
   });
 
-  // Calculate totals
+  // Add these lines AFTER the form initialization and BEFORE the current calculatedTotals useMemo
+  const discount =
+    useWatch({
+      control: form.control,
+      name: 'discount'
+    }) || 0;
+
+  const vat =
+    useWatch({
+      control: form.control,
+      name: 'vat'
+    }) || 0;
+
+  // Replace the current calculatedTotals useMemo with this:
   const calculatedTotals = useMemo(() => {
     const subTotal = cartItems.reduce((sum, item) => sum + item.totalPrice, 0);
-    const discount = form.watch('discount') || 0;
-    const vat = form.watch('vat') || 0;
-    const grandTotal = subTotal - discount + vat;
+    const discountValue = Number(discount) || 0;
+    const vatValue = Number(vat) || 0;
+    const grandTotal = subTotal - discountValue + vatValue;
 
     return {
       subTotal,
-      discount,
-      vat,
+      discount: discountValue,
+      vat: vatValue,
       grandTotal,
       totalProducts: cartItems.length
     };
-  }, [cartItems, form]);
-
+  }, [cartItems, discount, vat]); // Now reacts to discount and vat changes
   // Fetch additional data
   useEffect(() => {
     const fetchData = async () => {
@@ -141,7 +153,7 @@ export default function SalesUpdateForm({
         // Fetch fresh products list
         const productsData = await ActivegetProducts();
         setProducts(productsData);
-      } catch  {
+      } catch {
         toast.error('Failed to load required data');
       } finally {
         setLoading(false);
@@ -368,7 +380,14 @@ export default function SalesUpdateForm({
 
     try {
       setLoading(true);
-
+      // Calculate totals from current data
+      const subTotal = cartItems.reduce(
+        (sum, item) => sum + item.totalPrice,
+        0
+      );
+      const discountValue = Number(data.discount) || 0;
+      const vatValue = Number(data.vat) || 0;
+      const grandTotal = subTotal - discountValue + vatValue;
       const updateData = {
         ...data,
         items: cartItems.map((item) => ({
@@ -383,10 +402,10 @@ export default function SalesUpdateForm({
         })),
         totalProducts: calculatedTotals.totalProducts,
         subTotal: calculatedTotals.subTotal,
-        discount: calculatedTotals.discount,
-        vat: calculatedTotals.vat,
-        grandTotal: calculatedTotals.grandTotal,
-        NetTotal: calculatedTotals.grandTotal
+        discount: discountValue, // Use calculated value from form data
+        vat: vatValue,
+        grandTotal: grandTotal,
+        NetTotal: grandTotal
       };
 
       await updateSell(initialData!.id, updateData);
