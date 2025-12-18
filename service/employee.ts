@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable import/no-unresolved */
 
 import { IEmployee } from '@/models/employee';
@@ -98,7 +99,7 @@ export const resetUserPassword = async (
 ) => {
   try {
     const axiosInstance = axiosWithAuth(req);
-    const response = await axiosInstance.put(`/user/reset-password`, {
+    const response = await axiosInstance.put(`/user/reset-password/${userId}`, {
       newPassword
     });
     return response.data;
