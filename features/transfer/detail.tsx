@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -33,12 +34,16 @@ import {
 import { AlertModal } from '@/components/modal/alert-modal';
 import { PermissionGuard } from '@/components/PermissionGuard';
 import { PERMISSIONS } from '@/stores/permissions';
+import { useSession } from 'next-auth/react';
+import { getUserById } from '@/service/user'; // Add this import
+import { Imployee } from '@/models/employee'; // Add this import
 
 type TransferViewProps = {
   id?: string;
 };
 
 const TransferDetailPage: React.FC<TransferViewProps> = ({ id }) => {
+  const { data: session } = useSession();
   const [transfer, setTransfer] = useState<ITransfer | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -46,6 +51,110 @@ const TransferDetailPage: React.FC<TransferViewProps> = ({ id }) => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [hasDestinationAccess, setHasDestinationAccess] = useState(false);
+  const [userProfile, setUserProfile] = useState<Imployee | null>(null); // Add user profile state
+
+  // Fetch user profile to get shops and stores
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!session?.user) return;
+      
+      try {
+        const profile = await getUserById();
+        setUserProfile(profile);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+
+    if (session?.user) {
+      fetchUserProfile();
+    }
+  }, [session]);
+
+  const checkDestinationAccess = useCallback((transferData: ITransfer) => {
+    if (!session?.user || !userProfile) {
+      setHasDestinationAccess(false);
+      return;
+    }
+
+    // Use the userProfile data which contains shops and stores
+    const shops = (userProfile.shops as any[] | undefined) || [];
+    const stores = (userProfile.stores as any[] | undefined) || [];
+    
+    console.log('DEBUG - Access Check:', {
+      userShops: shops.map(s => ({ id: s.id, name: s.name })),
+      userStores: stores.map(s => ({ id: s.id, name: s.name })),
+      transferDest: {
+        type: transferData.destinationType,
+        storeId: transferData.destStore?.id,
+        storeName: transferData.destStore?.name,
+        shopId: transferData.destShop?.id,
+        shopName: transferData.destShop?.name
+      }
+    });
+    
+    // Check access based on destination type
+    if (transferData.destinationType === 'STORE' && transferData.destStore) {
+      // Check if user has access to the destination store
+      const hasStoreAccess = stores.some((store: any) => {
+        // Try multiple comparison methods
+        const matchById = store.id === transferData.destStore?.id;
+        const matchByName = store.name === transferData.destStore?.name;
+        const matchByStoreId = store.storeId === transferData.destStore?.id;
+        
+        console.log('Store comparison:', {
+          storeId: store.id,
+          storeName: store.name,
+          destStoreId: transferData.destStore?.id,
+          destStoreName: transferData.destStore?.name,
+          matchById,
+          matchByName,
+          matchByStoreId
+        });
+        
+        return matchById || matchByName || matchByStoreId;
+      });
+      
+      console.log('Has store access:', hasStoreAccess);
+      setHasDestinationAccess(hasStoreAccess);
+      
+      // If no access, check why
+      if (!hasStoreAccess && stores.length > 0) {
+        console.log('DEBUG - Store IDs for comparison:', {
+          userStoreIds: stores.map(s => s.id),
+          destStoreId: transferData.destStore?.id,
+          userStoreNames: stores.map(s => s.name),
+          destStoreName: transferData.destStore?.name
+        });
+      }
+      
+    } else if (transferData.destinationType === 'SHOP' && transferData.destShop) {
+      // Check if user has access to the destination shop
+      const hasShopAccess = shops.some((shop: any) => {
+        // Try multiple comparison methods
+        const matchById = shop.id === transferData.destShop?.id;
+        const matchByName = shop.name === transferData.destShop?.name;
+        
+        console.log('Shop comparison:', {
+          shopId: shop.id,
+          shopName: shop.name,
+          destShopId: transferData.destShop?.id,
+          destShopName: transferData.destShop?.name,
+          matchById,
+          matchByName
+        });
+        
+        return matchById || matchByName;
+      });
+      
+      console.log('Has shop access:', hasShopAccess);
+      setHasDestinationAccess(hasShopAccess);
+    } else {
+      console.log('No access - invalid destination type or missing data');
+      setHasDestinationAccess(false);
+    }
+  }, [session, userProfile]);
 
   useEffect(() => {
     const fetchTransfer = async () => {
@@ -54,19 +163,31 @@ const TransferDetailPage: React.FC<TransferViewProps> = ({ id }) => {
           const transferData = await getTransferId(id);
           setTransfer(transferData);
           setSelectedStatus(transferData.status);
+          
+          // Check if user has access to destination
+          checkDestinationAccess(transferData);
         }
-      } catch  {
+      } catch (error) {
+        console.error('Error fetching transfer:', error);
         toast.error('Failed to fetch transfer details');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTransfer();
-  }, [id, refreshTrigger]);
+    if (id && session?.user) {
+      fetchTransfer();
+    }
+  }, [id, refreshTrigger, checkDestinationAccess, session]);
 
   const handleStatusUpdate = async (action: 'complete' | 'cancel') => {
     if (!id) return;
+
+    // Double-check access for completion
+    if (action === 'complete' && !hasDestinationAccess) {
+      toast.error('You do not have access to complete this transfer');
+      return;
+    }
 
     setUpdating(true);
     try {
@@ -74,24 +195,22 @@ const TransferDetailPage: React.FC<TransferViewProps> = ({ id }) => {
       if (action === 'complete') {
         updatedTransfer = await completeTransfer(id);
         setSelectedStatus(TransferStatus.COMPLETED);
-        setIsCompleteModalOpen(false); // Close modal after successful completion
+        setIsCompleteModalOpen(false);
       } else {
         updatedTransfer = await cancelTransfer(id);
         setSelectedStatus(TransferStatus.CANCELLED);
-        setIsCancelModalOpen(false); // Close modal after successful cancellation
+        setIsCancelModalOpen(false);
       }
 
-      // Preserve existing items when updating
       setTransfer((prevTransfer) => ({
         ...updatedTransfer,
         items: prevTransfer?.items || updatedTransfer.items || []
       }));
 
       toast.success(`Transfer ${action}ed successfully`);
-
-      // Trigger a refresh of the data
       setRefreshTrigger((prev) => prev + 1);
-    } catch  {
+    } catch (error) {
+      console.error(`Error ${action}ing transfer:`, error);
       toast.error(`Failed to ${action} transfer`);
     } finally {
       setUpdating(false);
@@ -99,6 +218,11 @@ const TransferDetailPage: React.FC<TransferViewProps> = ({ id }) => {
   };
 
   const openCompleteModal = () => {
+    // Check access before opening modal
+    if (!hasDestinationAccess) {
+      toast.error('You do not have access to the destination shop/store');
+      return;
+    }
     setIsCompleteModalOpen(true);
   };
 
@@ -106,7 +230,8 @@ const TransferDetailPage: React.FC<TransferViewProps> = ({ id }) => {
     setIsCancelModalOpen(true);
   };
 
-  if (loading) {
+  // Show loading if still fetching user profile
+  if (loading || !userProfile) {
     return (
       <div className='flex h-screen items-center justify-center'>
         <Loader2 className='mr-2 h-8 w-8 animate-spin' />
@@ -170,29 +295,48 @@ const TransferDetailPage: React.FC<TransferViewProps> = ({ id }) => {
           <CardContent>
             <div className='flex flex-col items-start gap-4 sm:flex-row sm:items-center'>
               <div className='flex w-full gap-2 sm:w-auto'>
-                <PermissionGuard
-                  requiredPermission={PERMISSIONS.TRANSFER.COMPLETE.name}
-                >
-                  <Button
-                    onClick={openCompleteModal}
-                    disabled={
-                      updating || transfer.status === TransferStatus.COMPLETED
-                    }
-                    className='w-full sm:w-auto'
+                {/* Complete Transfer Button - Conditionally shown based on destination access */}
+                {hasDestinationAccess ? (
+                  <PermissionGuard
+                    requiredPermission={PERMISSIONS.TRANSFER.COMPLETE.name}
                   >
-                    {updating ? (
-                      <>
-                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                        Completing...
-                      </>
-                    ) : (
-                      <>
-                        <Check className='mr-2 h-4 w-4' />
-                        Complete Transfer
-                      </>
-                    )}
-                  </Button>
-                </PermissionGuard>
+                    <Button
+                      onClick={openCompleteModal}
+                      disabled={
+                        updating || transfer.status === TransferStatus.COMPLETED
+                      }
+                      className='w-full sm:w-auto'
+                    >
+                      {updating ? (
+                        <>
+                          <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                          Completing...
+                        </>
+                      ) : (
+                        <>
+                          <Check className='mr-2 h-4 w-4' />
+                          Complete Transfer
+                        </>
+                      )}
+                    </Button>
+                  </PermissionGuard>
+                ) : (
+                  // Show disabled button with tooltip or alternative message
+                  <div className='relative group'>
+                    <Button
+                      disabled
+                      className='w-full sm:w-auto opacity-50 cursor-not-allowed'
+                    >
+                      <Check className='mr-2 h-4 w-4' />
+                      Complete Transfer
+                    </Button>
+                    <div className='absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10'>
+                      No access to destination {transfer.destinationType?.toLowerCase()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Cancel Transfer Button - Always visible if user has permission */}
                 <PermissionGuard
                   requiredPermission={PERMISSIONS.TRANSFER.CANCEL.name}
                 >
@@ -229,7 +373,6 @@ const TransferDetailPage: React.FC<TransferViewProps> = ({ id }) => {
         </Card>
       )}
 
-      {/* Transfer Details Card */}
       <Card className='shadow-lg'>
         <CardHeader>
           <CardTitle className='flex items-center gap-2 text-2xl font-bold'>
@@ -292,6 +435,11 @@ const TransferDetailPage: React.FC<TransferViewProps> = ({ id }) => {
                       ? (transfer.destStore?.name ?? 'Unknown Store')
                       : (transfer.destShop?.name ?? 'Unknown Shop')}
                   </p>
+                  {!hasDestinationAccess && (
+                    <Badge variant="outline" className="text-xs">
+                      No Access
+                    </Badge>
+                  )}
                 </div>
                 {transfer.createdBy && (
                   <div className='flex items-center gap-2'>

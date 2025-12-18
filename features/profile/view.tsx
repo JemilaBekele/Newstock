@@ -21,6 +21,8 @@ import {Imployee } from '@/models/employee';
 interface Shop {
   id: string;
   name: string;
+    branch?: Branch;
+
 }
 
 interface Branch {
@@ -70,7 +72,7 @@ export default function ProfileViewPage() {
         setName(data.name || '');
         setEmail(data.email || '');
         setPhone(data.phone || '');
-      } catch (error) {
+      } catch  {
         toast.error('Failed to load profile');
       } finally {
         setLoading(false);
@@ -363,7 +365,34 @@ export default function ProfileViewPage() {
                   </div>
                 </div>
               )}
-              
+              {shops.length > 0 && (
+                <div className='md:col-span-2'>
+                  <strong className='mb-2 flex items-center gap-2 font-medium text-gray-500 dark:text-gray-400'>
+                    <Store className='h-4 w-4' />
+                    Assigned Shops:
+                  </strong>
+                  <div className='mt-2 grid grid-cols-1 gap-2 md:grid-cols-2'>
+                    {shops.map((shop) => (
+                      <div
+                        key={shop.id}
+                        className='rounded-lg border border-green-100 bg-green-50 p-3 dark:border-green-900 dark:bg-green-900/20'
+                      >
+                        <p className='font-medium text-gray-900 dark:text-gray-100'>
+                          {shop.name}
+                        </p>
+                        {shop.branch?.name && (
+                          <p className='mt-1 text-sm text-gray-600 dark:text-gray-400'>
+                            Branch: {shop.branch.name}
+                          </p>
+                        )}
+                        <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+                          Shop
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {/* Assigned Stores Section */}
               {stores.length > 0 && (
                 <div className='md:col-span-2'>

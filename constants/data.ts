@@ -23,16 +23,6 @@ export const navItems: NavItem[] = [
     items: [] // Empty array as there are no child items for Dashboard Own_dashboard
   },
   {
-    title: 'Reset',
-    url: '/dashboard/Reset',
-    icon: 'dashboard',
-    isActive: false,
-    shortcut: ['ds', 'ds'],
-    permission: 'VIEW_MAIN_DASHBOARD',
-    items: [] // Empty array as there are no child items for Dashboard Own_dashboard
-  },
-
-  {
     title: 'Company',
     url: '/dashboard/Company',
     icon: 'billing',

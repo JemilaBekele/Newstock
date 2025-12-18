@@ -322,20 +322,14 @@ const ShopBatchModal = ({
     if (!product) return 0;
 
     if (selectedPriceOption === 'custom') {
-      return (
-        parseFloat(customPrice) ||
-        parseFloat(product.sellPrice?.toString() || '0')
-      );
-    } else if (selectedPriceOption === 'base') {
-      return parseFloat(product.sellPrice?.toString() || '0');
+      // Return custom price if set, otherwise 0 (empty)
+      return parseFloat(customPrice) || 0;
     } else {
+      // Only custom and additional price options remain
       const additionalPrice = getAdditionalPricesForSelectedShop().find(
         (option) => option.id === selectedPriceOption
       );
-      return (
-        additionalPrice?.price ||
-        parseFloat(product.sellPrice?.toString() || '0')
-      );
+      return additionalPrice?.price || 0;
     }
   };
 
@@ -409,12 +403,13 @@ const ShopBatchModal = ({
 
   // Set default price when shop changes
   useEffect(() => {
-    if (selectedShop && product) {
-      const defaultPrice = product.sellPrice?.toString() || '0';
-      setCustomPrice(defaultPrice);
+    if (selectedShop) {
+      // Start with empty custom price instead of base price
+      setCustomPrice('');
+      // Start with custom option selected
       setSelectedPriceOption('custom');
     }
-  }, [selectedShop, product]);
+  }, [selectedShop]);
 
   return (
     <Modal
@@ -530,7 +525,7 @@ const ShopBatchModal = ({
         )}
 
         {/* Price Selection - Always visible but disabled until shop is selected */}
-        <div className='space-y-4 border-t border-gray-200 pt-4 dark:border-gray-600'>
+      <div className='space-y-4 border-t border-gray-200 pt-4 dark:border-gray-600'>
           <div className='space-y-2'>
             <Label
               htmlFor='unitPrice'
@@ -557,36 +552,16 @@ const ShopBatchModal = ({
               className='w-full border-gray-300 bg-white text-sm text-gray-900 placeholder-gray-500 sm:text-base dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400'
               disabled={!selectedShop}
             />
-            <p className='text-xs text-gray-500 dark:text-gray-400'>
-              Base price:{' '}
-              {formatPrice(parseFloat(product?.sellPrice?.toString() || '0'))}.
-            </p>
+            {/* REMOVED the base price display paragraph */}
           </div>
 
           {/* Recommended Additional Prices */}
           {selectedShop && additionalPrices.length > 0 && (
             <div className='space-y-2'>
               <div className='flex flex-wrap gap-2'>
-                {/* Base Price Option */}
-                <Button
-                  type='button'
-                  variant={
-                    selectedPriceOption === 'base' ? 'default' : 'outline'
-                  }
-                  size='sm'
-                  onClick={() => {
-                    setSelectedPriceOption('base');
-                    setCustomPrice(product?.sellPrice?.toString() || '0');
-                  }}
-                  className='text-xs sm:text-sm'
-                >
-                  Base:{' '}
-                  {formatPrice(
-                    parseFloat(product?.sellPrice?.toString() || '0')
-                  )}
-                </Button>
-
-                {/* Additional Price Options */}
+                {/* REMOVED Base Price Option */}
+                
+                {/* Additional Price Options Only */}
                 {additionalPrices.map((option) => (
                   <Button
                     key={option.id}
@@ -608,6 +583,7 @@ const ShopBatchModal = ({
             </div>
           )}
         </div>
+
 
         {/* Quantity Input */}
         <div className='space-y-2'>

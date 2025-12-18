@@ -370,12 +370,7 @@ export const PERMISSIONS = {
       description: 'Delete sell stock corrections'
     }
   },
-  INVENTORY_DASHBOARD: {
-    VIEW_DASHBOARD: {
-      name: 'VIEW_INVENTORY_DASHBOARD',
-      description: 'View comprehensive inventory dashboard data'
-    }
-  },
+  
   PURCHASE: {
     CREATE: {
       name: 'CREATE_PURCHASE',
