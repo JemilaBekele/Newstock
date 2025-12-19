@@ -13,13 +13,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
+
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -315,7 +309,13 @@ export default function SellCorrectionForm({
               <label className='text-muted-foreground text-sm font-medium'>
                 Grand Total
               </label>
-              <p className='text-sm'>${sellData.grandTotal?.toFixed(2)}</p>
+              <p className='text-sm'>{sellData.grandTotal?.toFixed(2)}</p>
+            </div>
+                     <div>
+              <label className='text-muted-foreground text-sm font-medium'>
+                Reference
+              </label>
+              <p className='text-sm'>{sellData.invoiceNo}</p>
             </div>
           </div>
         </CardContent>
@@ -329,51 +329,7 @@ export default function SellCorrectionForm({
               <CardTitle>Stock Correction Details</CardTitle>
             </CardHeader>
             <CardContent className='space-y-6'>
-              {/* Header Information */}
-              <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-                <FormField
-                  name='reference'
-                  control={form.control}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Reference</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder='Correction reference...'
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  name='status'
-                  control={form.control}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder='Select status' />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value='PENDING'>Pending</SelectItem>
-                          <SelectItem value='APPROVED'>Approved</SelectItem>
-                          <SelectItem value='REJECTED'>Rejected</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+          
 
               <FormField
                 name='notes'

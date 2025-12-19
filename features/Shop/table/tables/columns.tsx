@@ -59,6 +59,16 @@ export const sellColumns: ColumnDef<ISell>[] = [
     ),
     enableColumnFilter: true
   },
+   {
+    accessorKey: 'createdBy',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Sales' />
+    ),
+    cell: ({ cell }) => (
+      <div>{cell.getValue<ISell['createdBy']>()?.name ?? '-'}</div>
+    ),
+    enableColumnFilter: true
+  },
   {
     accessorKey: 'branch',
     header: ({ column }) => (
