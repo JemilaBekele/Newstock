@@ -647,15 +647,6 @@ export default function SalesUpdateForm({
                         </p>
                       </div>
 
-                      {/* Available Stock */}
-                      <div className='md:col-span-2'>
-                        <FormLabel className='text-sm'>Available</FormLabel>
-                        <p
-                          className={`text-sm ${item.availableQuantity && item.quantity > item.availableQuantity ? 'text-red-600' : 'text-green-600'}`}
-                        >
-                          {item.availableQuantity || 'N/A'} units
-                        </p>
-                      </div>
 
                       {/* Actions */}
                       <div className='flex gap-2 md:col-span-1'>
