@@ -2,12 +2,13 @@ import { IEmployee } from './employee';
 import { IProduct, IProductBatch } from './Product';
 import { IShop } from './shop';
 import { IUnitOfMeasure } from './UnitOfMeasure';
-import { ISell } from './Sell';
+import { ISell, ItemSaleStatus } from './Sell';
 
 export enum SellStockCorrectionStatus {
   PENDING = 'PENDING',
   APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED'
+  REJECTED = 'REJECTED',
+  PARTIAL = 'PARTIAL'
 }
 
 export interface ISellStockCorrection {
@@ -49,6 +50,7 @@ export interface ISellStockCorrectionItem {
 
   unitOfMeasureId: string;
   unitOfMeasure?: IUnitOfMeasure;
+  itemSaleStatus: ItemSaleStatus;
 
   quantity: number; // positive or negative
   unitPrice: number;

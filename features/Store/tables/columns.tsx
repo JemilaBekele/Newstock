@@ -62,7 +62,7 @@ export const sellColumns: ColumnDef<ISell>[] = [
      {
     accessorKey: 'createdBy',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Sales' />
+      <DataTableColumnHeader column={column} title='Seller' />
     ),
     cell: ({ cell }) => (
       <div>{cell.getValue<ISell['createdBy']>()?.name ?? '-'}</div>

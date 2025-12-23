@@ -46,7 +46,7 @@ export const StoreCellAction: React.FC<CellActionProps> = ({ data }) => {
       toast.success('Store deleted successfully');
       router.refresh();
       setOpen(false);
-    } catch (error) {
+    } catch  {
       toast.error('Error deleting store. Please try again.');
     } finally {
       setLoading(false);

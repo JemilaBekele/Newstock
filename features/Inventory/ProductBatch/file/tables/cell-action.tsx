@@ -78,6 +78,10 @@ export const ProductBatchCellAction: React.FC<ProductBatchCellActionProps> = ({
               <IconEdit className='mr-2 h-4 w-4' /> Update
             </DropdownMenuItem>
           </PermissionGuard>
+
+           <PermissionGuard
+            requiredPermission={PERMISSIONS.PRODUCT_BATCH.VIEW.name}
+          >
           <DropdownMenuItem
             onClick={() =>
               router.push(`/dashboard/ProductBatch/view?id=${data.id}`)
@@ -85,6 +89,9 @@ export const ProductBatchCellAction: React.FC<ProductBatchCellActionProps> = ({
           >
             <Edit className='mr-2 h-4 w-4' /> View
           </DropdownMenuItem>
+          </PermissionGuard>
+
+
           <PermissionGuard
             requiredPermission={PERMISSIONS.PRODUCT_BATCH.DELETE.name}
           >

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { IncomingMessage } from 'http';
 import { axiosWithAuth } from './cli';
 import { api } from './api';
@@ -146,12 +147,14 @@ export const updateSellStockCorrection = async (
 // ✅ Approve sell stock correction
 export const approveSellStockCorrection = async (
   id: string,
+  deliveredItemIds: string[] = [],
   req?: IncomingMessage
 ) => {
   try {
     const axiosInstance = axiosWithAuth(req);
     const response = await axiosInstance.patch(
-      `/sell-stock-corrections/${id}/approve`
+      `/sell-stock-corrections/${id}/approve`,
+      { deliveredItemIds }
     );
     return response.data;
   } catch (error) {

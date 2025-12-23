@@ -25,7 +25,8 @@ import {
   Printer,
   Eye,
   Lock,
-  Unlock
+  Unlock,
+  Trash2
 } from 'lucide-react';
 import {
   Table,
@@ -148,7 +149,8 @@ const BatchItem = ({
   remainingQuantity,
   updateBatchQuantity,
   removeBatchAssignment,
-  handleAssignAllToBatch
+  handleAssignAllToBatch,
+  availableBatches
 }: {
   batch: IBatch;
   assignment?: BatchAssignment;
@@ -333,6 +335,16 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
   const [actionType, setActionType] = useState<
     'approve' | 'reject' | 'delete' | null
   >(null);
+
+  // State for stock correction delivery
+  const [stockCorrectionDelivery, setStockCorrectionDelivery] = useState<{
+    [correctionId: string]: string[]; // correctionId -> array of delivered item IDs
+  }>({});
+
+  // State for stock correction approve modal
+  const [approveCorrectionDialog, setApproveCorrectionDialog] = useState(false);
+  const [selectedCorrectionForApprove, setSelectedCorrectionForApprove] =
+    useState<ISellStockCorrection | null>(null);
 
   const [netTotalAdjustment, setNetTotalAdjustment] =
     useState<NetTotalAdjustment | null>(null);
@@ -1042,6 +1054,12 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
     setBatchAssignments((prev) => prev.filter((b) => b.batchId !== batchId));
   };
 
+  // NEW: Clear all batch assignments for current item
+  const clearBatchAssignments = () => {
+    setBatchAssignments([]);
+    toast.success('Cleared all batch assignments');
+  };
+
   // Save batch assignments for current item
   const saveBatchAssignments = () => {
     if (!currentItem) return;
@@ -1097,6 +1115,25 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
   // Get total assigned quantity for an item
   const getTotalAssignedQuantity = (itemId: string): number => {
     return getAssignedBatches(itemId).reduce((sum, b) => sum + b.quantity, 0);
+  };
+
+  // Clear batch assignments for a specific item
+  const clearItemBatchAssignments = (itemId: string) => {
+    setDeliveryData((prev) => ({
+      items: prev.items.filter((i) => i.itemId !== itemId)
+    }));
+
+    // Remove from selected items
+    setSelectedItems((prev) => prev.filter((id) => id !== itemId));
+
+    toast.success('Cleared batch assignments for this item');
+  };
+
+  // Clear all batch assignments
+  const clearAllBatchAssignments = () => {
+    setDeliveryData({ items: [] });
+    setSelectedItems([]);
+    toast.success('Cleared all batch assignments');
   };
 
   const handleDelivery = async (mode: DeliveryMode) => {
@@ -1179,6 +1216,66 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
     }
   };
 
+  // Handle stock correction item delivery selection
+  const handleCorrectionItemDelivery = (correctionId: string, itemId: string) => {
+    setStockCorrectionDelivery((prev) => {
+      const currentDeliveredItems = prev[correctionId] || [];
+      const isAlreadyDelivered = currentDeliveredItems.includes(itemId);
+      
+      if (isAlreadyDelivered) {
+        // Remove from delivered items
+        return {
+          ...prev,
+          [correctionId]: currentDeliveredItems.filter(id => id !== itemId)
+        };
+      } else {
+        // Add to delivered items
+        return {
+          ...prev,
+          [correctionId]: [...currentDeliveredItems, itemId]
+        };
+      }
+    });
+  };
+
+  // Handle approve stock correction with selected items
+  const handleApproveCorrectionWithItems = (correction: ISellStockCorrection) => {
+    setSelectedCorrectionForApprove(correction);
+    setApproveCorrectionDialog(true);
+  };
+
+  const confirmApproveCorrection = async () => {
+    if (!selectedCorrectionForApprove) return;
+
+    setUpdating(true);
+    try {
+      const deliveredItemIds = stockCorrectionDelivery[selectedCorrectionForApprove.id] || [];
+      
+      await approveSellStockCorrection(
+        selectedCorrectionForApprove.id,
+        deliveredItemIds
+      );
+      
+      toast.success('Stock correction approved successfully');
+      setRefreshTrigger((prev) => prev + 1);
+      
+      // Clear the delivery selection for this correction
+      setStockCorrectionDelivery((prev) => {
+        const { [selectedCorrectionForApprove.id]: _, ...rest } = prev;
+        return rest;
+      });
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message ||
+          'Failed to approve stock correction'
+      );
+    } finally {
+      setUpdating(false);
+      setApproveCorrectionDialog(false);
+      setSelectedCorrectionForApprove(null);
+    }
+  };
+
   const handleCorrectionAction = async (
     correctionId: string,
     action: 'approve' | 'reject' | 'delete'
@@ -1194,7 +1291,8 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
     setUpdating(true);
     try {
       if (actionType === 'approve' && selectedCorrectionId) {
-        await approveSellStockCorrection(selectedCorrectionId);
+        // For old approve method (without item selection)
+        await approveSellStockCorrection(selectedCorrectionId, []);
         toast.success('Stock correction approved successfully');
       } else if (actionType === 'reject' && selectedCorrectionId) {
         await rejectSellStockCorrection(selectedCorrectionId);
@@ -1389,6 +1487,79 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Approve Correction with Items Dialog */}
+      <AlertDialog open={approveCorrectionDialog} onOpenChange={setApproveCorrectionDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Approve Stock Correction</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedCorrectionForApprove && (
+                <>
+                  <p>Select which items have been delivered for correction:</p>
+                  <div className='mt-4 max-h-60 overflow-y-auto'>
+                    {selectedCorrectionForApprove.items?.map((item) => {
+                      const isDelivered = stockCorrectionDelivery[selectedCorrectionForApprove.id]?.includes(item.id);
+                      const isAddition = item.quantity > 0;
+                      
+                      return (
+                        <div
+                          key={item.id}
+                          className={`flex items-center justify-between p-2 rounded mb-2 ${isDelivered ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}
+                        >
+                          <div className='flex items-center gap-3'>
+                            <Checkbox
+                              checked={isDelivered}
+                              onCheckedChange={() => handleCorrectionItemDelivery(selectedCorrectionForApprove.id, item.id)}
+                            />
+                            <div>
+                              <p className='font-medium'>{item.product?.name}</p>
+                              <p className='text-sm text-gray-600'>
+                                {isAddition ? '+' : ''}{item.quantity} units • {item.shop?.name}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant={isAddition ? 'default' : 'destructive'}>
+                            {isAddition ? 'Addition' : 'Reduction'}
+                          </Badge>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className='mt-4 text-sm text-gray-600'>
+                    <p>Status will be:</p>
+                    <ul className='list-disc pl-5 mt-2'>
+                      <li><strong>APPROVED</strong> - All items delivered</li>
+                      <li><strong>PARTIAL</strong> - Some items delivered</li>
+                      <li><strong>PENDING</strong> - No items delivered</li>
+                    </ul>
+                  </div>
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmApproveCorrection}
+              disabled={updating}
+              className='bg-green-600 hover:bg-green-700'
+            >
+              {updating ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  Approving...
+                </>
+              ) : (
+                <>
+                  <Check className='mr-2 h-4 w-4' />
+                  Approve Selected Items
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Print Button and Unlock Button (if locked) */}
       <div className='flex justify-between gap-2'>
         <div>
@@ -1409,6 +1580,18 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
           )}
         </div>
         <div className='flex gap-2'>
+          {/* Clear All Button */}
+          {selectedItems.length > 0 && (
+            <Button
+              onClick={clearAllBatchAssignments}
+              variant='destructive'
+              className='flex items-center gap-2'
+              disabled={updating}
+            >
+              <Trash2 className='h-4 w-4' />
+              Clear All Assignments
+            </Button>
+          )}
           <Button
             onClick={handlePrint}
             variant='outline'
@@ -1441,7 +1624,6 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
         }
       />
 
-      {/* Batch Selection Modal */}
       {/* Batch Selection Modal */}
       <Dialog open={batchModalOpen} onOpenChange={setBatchModalOpen}>
         <DialogContent className='max-w-20xl max-h-[180vh] overflow-y-auto'>
@@ -1529,7 +1711,17 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
               {/* Current Assignments Summary */}
               {batchAssignments.length > 0 && (
                 <div className='border-t pt-4'>
-                  <h4 className='mb-3 font-semibold'>Current Assignments</h4>
+                  <div className='flex items-center justify-between mb-3'>
+                    <h4 className='font-semibold'>Current Assignments</h4>
+                    <Button
+                      variant='destructive'
+                      size='sm'
+                      onClick={clearBatchAssignments}
+                    >
+                      <Trash2 className='mr-1 h-3 w-3' />
+                      Clear All
+                    </Button>
+                  </div>
                   <div className='space-y-2'>
                     {batchAssignments.map((assignment) => (
                       <div
@@ -1569,10 +1761,19 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className='flex flex-col gap-2 sm:flex-row'>
             <Button variant='outline' onClick={() => setBatchModalOpen(false)}>
               Cancel
             </Button>
+            {batchAssignments.length > 0 && (
+              <Button
+                variant='destructive'
+                onClick={clearBatchAssignments}
+              >
+                <Trash2 className='mr-2 h-4 w-4' />
+                Clear
+              </Button>
+            )}
             <Button
               onClick={saveBatchAssignments}
               disabled={
@@ -1883,18 +2084,31 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                       <Truck className='h-5 w-5 text-green-600' />
                       Your Shop Items - Ready for Delivery
                     </h3>
-                    {hasUndeliveredItems && (
-                      <Button
-                        variant='outline'
-                        size='sm'
-                        onClick={handleSelectAll}
-                        disabled={updating}
-                      >
-                        {selectedItems.length === undeliveredItemsCount
-                          ? 'Deselect All'
-                          : 'Select All'}
-                      </Button>
-                    )}
+                    <div className='flex gap-2'>
+                      {selectedItems.length > 0 && (
+                        <Button
+                          variant='destructive'
+                          size='sm'
+                          onClick={clearAllBatchAssignments}
+                          disabled={updating}
+                        >
+                          <Trash2 className='mr-1 h-3 w-3' />
+                          Clear All
+                        </Button>
+                      )}
+                      {hasUndeliveredItems && (
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={handleSelectAll}
+                          disabled={updating}
+                        >
+                          {selectedItems.length === undeliveredItemsCount
+                            ? 'Deselect All'
+                            : 'Select All'}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <Table>
                     <TableHeader>
@@ -1967,73 +2181,85 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                             </TableCell>
 
                             <TableCell>
-                              {hasExistingBatches ? (
-                                <div className='space-y-1'>
-                                  {existingBatches.map((batchItem) => (
-                                    <div
-                                      key={batchItem.id}
-                                      className='flex items-center gap-2 text-sm'
-                                    >
-                                      <Badge
-                                        variant='outline'
-                                        className='text-xs'
+                              <div className='space-y-1'>
+                                {hasExistingBatches ? (
+                                  <>
+                                    {existingBatches.map((batchItem) => (
+                                      <div
+                                        key={batchItem.id}
+                                        className='flex items-center gap-2 text-sm'
                                       >
-                                        {batchItem.batch?.batchNumber ||
-                                          'Unknown Batch'}
-                                      </Badge>
+                                        <Badge
+                                          variant='outline'
+                                          className='text-xs'
+                                        >
+                                          {batchItem.batch?.batchNumber ||
+                                            'Unknown Batch'}
+                                        </Badge>
 
-                                      <span className='text-muted-foreground'>
-                                        {batchItem.quantity} quantity
-                                      </span>
-                                    </div>
-                                  ))}
-
-                                  <div
-                                    className={`text-xs ${
-                                      isExistingFullyAssigned
-                                        ? 'text-green-600 dark:text-green-400'
-                                        : 'text-amber-600 dark:text-amber-400'
-                                    } `}
-                                  >
-                                    {existingBatchTotal}/{item.quantity}{' '}
-                                    assigned
-                                  </div>
-                                </div>
-                              ) : assignedBatches.length > 0 ? (
-                                <div className='space-y-1'>
-                                  {assignedBatches.map((batch, index) => (
+                                        <span className='text-muted-foreground'>
+                                          {batchItem.quantity} quantity
+                                        </span>
+                                      </div>
+                                    ))}
                                     <div
-                                      key={index}
-                                      className='flex items-center gap-2 text-sm'
+                                      className={`text-xs ${
+                                        isExistingFullyAssigned
+                                          ? 'text-green-600 dark:text-green-400'
+                                          : 'text-amber-600 dark:text-amber-400'
+                                      } `}
                                     >
-                                      <Badge
-                                        variant='outline'
-                                        className='text-xs'
-                                      >
-                                        {batch.batchNumber}
-                                      </Badge>
-
-                                      <span className='text-muted-foreground'>
-                                        {batch.quantity} units
-                                      </span>
+                                      {existingBatchTotal}/{item.quantity}{' '}
+                                      assigned
                                     </div>
-                                  ))}
+                                  </>
+                                ) : assignedBatches.length > 0 ? (
+                                  <>
+                                    {assignedBatches.map((batch, index) => (
+                                      <div
+                                        key={index}
+                                        className='flex items-center gap-2 text-sm'
+                                      >
+                                        <Badge
+                                          variant='outline'
+                                          className='text-xs'
+                                        >
+                                          {batch.batchNumber}
+                                        </Badge>
 
-                                  <div
-                                    className={`text-xs ${
-                                      isFullyAssigned
-                                        ? 'text-green-600 dark:text-green-400'
-                                        : 'text-amber-600 dark:text-amber-400'
-                                    } `}
+                                        <span className='text-muted-foreground'>
+                                          {batch.quantity} units
+                                        </span>
+                                      </div>
+                                    ))}
+                                    <div
+                                      className={`text-xs ${
+                                        isFullyAssigned
+                                          ? 'text-green-600 dark:text-green-400'
+                                          : 'text-amber-600 dark:text-amber-400'
+                                      } `}
+                                    >
+                                      {totalAssigned}/{item.quantity} assigned
+                                    </div>
+                                  </>
+                                ) : (
+                                  <span className='text-muted-foreground text-sm'>
+                                    Not assigned
+                                  </span>
+                                )}
+                                {assignedBatches.length > 0 && (
+                                  <Button
+                                    size='sm'
+                                    variant='ghost'
+                                    className='mt-1 h-6 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50'
+                                    onClick={() => clearItemBatchAssignments(item.id)}
+                                    disabled={updating}
                                   >
-                                    {totalAssigned}/{item.quantity} assigned
-                                  </div>
-                                </div>
-                              ) : (
-                                <span className='text-muted-foreground text-sm'>
-                                  Not assigned
-                                </span>
-                              )}
+                                    <Trash2 className='mr-1 h-3 w-3' />
+                                    Clear
+                                  </Button>
+                                )}
+                              </div>
                             </TableCell>
 
                             <TableCell>
@@ -2060,17 +2286,19 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                               <TableCell>
                                 {item.itemSaleStatus !==
                                   ItemSaleStatus.DELIVERED && (
-                                  <Button
-                                    size='sm'
-                                    variant='outline'
-                                    onClick={() => openBatchModal(item)}
-                                    disabled={updating}
-                                    className='hover:bg-green-100 dark:hover:bg-green-900'
-                                  >
-                                    {hasExistingBatches
-                                      ? 'Reassign Batches'
-                                      : 'Assign Batches'}
-                                  </Button>
+                                  <div className='flex gap-1'>
+                                    <Button
+                                      size='sm'
+                                      variant='outline'
+                                      onClick={() => openBatchModal(item)}
+                                      disabled={updating}
+                                      className='hover:bg-green-100 dark:hover:bg-green-900'
+                                    >
+                                      {hasExistingBatches
+                                        ? 'Reassign Batches'
+                                        : 'Assign Batches'}
+                                    </Button>
+                                  </div>
                                 )}
                               </TableCell>
                             )}
@@ -2238,52 +2466,65 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                               </Badge>
                             </div>
                           </div>
-                          <div className='flex gap-2'>
-                            {correction.status ===
-                              SellStockCorrectionStatus.PENDING && (
-                              <>
-                                <Button
-                                  variant='default'
-                                  size='sm'
-                                  onClick={() =>
-                                    handleCorrectionAction(
-                                      correction.id,
-                                      'approve'
-                                    )
-                                  }
-                                  disabled={updating}
-                                >
-                                  Approve
-                                </Button>
-                                <Button
-                                  variant='destructive'
-                                  size='sm'
-                                  onClick={() =>
-                                    handleCorrectionAction(
-                                      correction.id,
-                                      'reject'
-                                    )
-                                  }
-                                  disabled={updating}
-                                >
-                                  Reject
-                                </Button>
-                                <Button
-                                  variant='outline'
-                                  size='sm'
-                                  onClick={() =>
-                                    handleCorrectionAction(
-                                      correction.id,
-                                      'delete'
-                                    )
-                                  }
-                                  disabled={updating}
-                                >
-                                  Delete
-                                </Button>
-                              </>
-                            )}
-                          </div>
+                         <div className='flex gap-2'>
+  {(correction.status === SellStockCorrectionStatus.PENDING || 
+    correction.status === SellStockCorrectionStatus.PARTIAL) && (
+    <>
+      <Button
+        variant='default'
+        size='sm'
+        onClick={() => handleApproveCorrectionWithItems(correction)}
+        disabled={updating}
+      >
+        <Truck className='mr-2 h-4 w-4' />
+        Approve with Delivery
+      </Button>
+      {correction.status === SellStockCorrectionStatus.PENDING && (
+        <>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() =>
+              handleCorrectionAction(
+                correction.id,
+                'approve'
+              )
+            }
+            disabled={updating}
+          >
+            Approve All
+          </Button>
+          <Button
+            variant='destructive'
+            size='sm'
+            onClick={() =>
+              handleCorrectionAction(
+                correction.id,
+                'reject'
+              )
+            }
+            disabled={updating}
+          >
+            Reject
+          </Button>
+        </>
+      )}
+      <Button
+        variant='outline'
+        size='sm'
+        onClick={() =>
+          handleCorrectionAction(
+            correction.id,
+            'delete'
+          )
+        }
+        disabled={updating}
+      >
+        Delete
+      </Button>
+    </>
+  )}
+</div>
                         </div>
 
                         <div className='mb-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
@@ -2346,6 +2587,9 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                                   <TableHead className='w-25'>
                                     Type
                                   </TableHead>
+                                  <TableHead className='w-20'>
+                                    Delivered
+                                  </TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
@@ -2353,6 +2597,7 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                                   correction.items.map(
                                     (item: ISellStockCorrectionItem, index) => {
                                       const isAddition = item.quantity > 0;
+                                      const isDelivered = stockCorrectionDelivery[correction.id]?.includes(item.id);
 
                                       // Get batch information from batches relation with batch number and quantity
                                       const batchInfo =
@@ -2431,6 +2676,25 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                                                 : 'Reduction'}
                                             </Badge>
                                           </TableCell>
+                                     <TableCell>
+  {/* Show checkbox for PENDING or PARTIAL corrections where item is not yet DELIVERED */}
+  {(correction.status === SellStockCorrectionStatus.PENDING || 
+    correction.status === SellStockCorrectionStatus.PARTIAL) && 
+    item.itemSaleStatus !== 'DELIVERED' ? (
+    <Checkbox
+      checked={isDelivered}
+      onCheckedChange={() => handleCorrectionItemDelivery(correction.id, item.id)}
+      disabled={updating}
+    />
+  ) : item.itemSaleStatus ? (
+    <Badge
+      variant={item.itemSaleStatus === 'DELIVERED' ? 'default' : 'secondary'}
+      className='capitalize'
+    >
+      {item.itemSaleStatus.toLowerCase()}
+    </Badge>
+  ) : null}
+</TableCell>
                                         </TableRow>
                                       );
                                     }
@@ -2450,6 +2714,16 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                                   <span className='text-muted-foreground'>
                                     {correction.items.length} items
                                   </span>
+                                  {correction.status === SellStockCorrectionStatus.PENDING && (
+                                    <div className='mt-1 text-sm'>
+                                      <span className='font-medium'>
+                                        Selected for delivery:{' '}
+                                      </span>
+                                      <span className='text-muted-foreground'>
+                                        {(stockCorrectionDelivery[correction.id] || []).length} items
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
                                 <div className='text-right'>
                                   <span className='font-medium'>

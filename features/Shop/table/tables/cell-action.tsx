@@ -82,15 +82,19 @@ export const SellCellAction: React.FC<SellCellActionProps> = ({ data }) => {
             <Edit className='mr-2 h-4 w-4' /> View
           </DropdownMenuItem>
           {data.saleStatus === 'DELIVERED' && (
+                        <PermissionGuard requiredPermission={PERMISSIONS.SELL_STOCK_CORRECTION.CREATE.name}>
+
             <DropdownMenuItem
               onClick={() =>
                 router.push(
-                  `/dashboard/UserBasedSell/SellCorrectionForm?id=${data.id}`
+                  `/dashboard/Sell/SellCorrectionForm?id=${data.id}`
                 )
               }
             >
               <Edit className='mr-2 h-4 w-4' /> Return Sell Correction
             </DropdownMenuItem>
+                        </PermissionGuard>
+
           )}
 
           <PermissionGuard requiredPermission={PERMISSIONS.SELL.DELETE.name}>

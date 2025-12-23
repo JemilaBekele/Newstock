@@ -21,22 +21,18 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { ISell } from '@/models/Sell';
-import {
-  ISellStockCorrection,
-  SellStockCorrectionStatus
-} from '@/models/SellStockCorrection';
+import { ISellStockCorrection } from '@/models/SellStockCorrection';
 import { createSellStockCorrection } from '@/service/SellStockCorrection';
 
+// Updated schema without status and reference
 const formSchema = z.object({
-  reference: z.string().optional(),
   notes: z.string().optional(),
-  status: z.enum(['PENDING', 'APPROVED', 'REJECTED']),
   items: z.array(
     z.object({
       productId: z.string(),
       shopId: z.string().optional(),
       unitOfMeasureId: z.string(),
-      quantity: z.number(), // Remove the zero check here since we'll filter
+      quantity: z.number(),
       unitPrice: z.number().min(0),
       totalPrice: z.number().min(0),
       batches: z.array(
@@ -46,7 +42,7 @@ const formSchema = z.object({
         })
       )
     })
-  ) // Remove the min(1) requirement since we'll handle it in onSubmit
+  )
 });
 
 interface SellCorrectionFormProps {
@@ -72,9 +68,7 @@ export default function SellCorrectionForm({
   const defaultValues = useMemo(() => {
     if (initialData) {
       return {
-        reference: initialData.reference || '',
         notes: initialData.notes || '',
-        status: initialData.status || 'PENDING',
         items:
           initialData.items?.map((item) => ({
             productId: item.productId,
@@ -94,9 +88,7 @@ export default function SellCorrectionForm({
 
     // Create from sell data
     return {
-      reference: sellData?.invoiceNo || '',
       notes: '',
-      status: 'PENDING' as SellStockCorrectionStatus,
       items:
         sellData?.items?.map((item) => {
           const totalPrice =
@@ -234,9 +226,9 @@ export default function SellCorrectionForm({
 
       const correctionData = {
         sellId: sellId,
-        reference: data.reference,
+        reference: sellData.invoiceNo, // Use invoiceNo as reference
         notes: data.notes,
-        status: data.status,
+        status: 'PENDING' as const, // Always set to PENDING
         total: filteredTotalAmount,
         items: filteredItems
       };
@@ -275,9 +267,9 @@ export default function SellCorrectionForm({
           <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
             <div>
               <label className='text-muted-foreground text-sm font-medium'>
-                Invoice No
+                Invoice No (will be used as reference)
               </label>
-              <p className='text-sm'>{sellData.invoiceNo}</p>
+              <p className='text-sm font-medium'>{sellData.invoiceNo}</p>
             </div>
             <div>
               <label className='text-muted-foreground text-sm font-medium'>
@@ -311,12 +303,6 @@ export default function SellCorrectionForm({
               </label>
               <p className='text-sm'>{sellData.grandTotal?.toFixed(2)}</p>
             </div>
-              <div>
-              <label className='text-muted-foreground text-sm font-medium'>
-                Reference
-              </label>
-              <p className='text-sm'>${sellData.invoiceNo}</p>
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -327,10 +313,11 @@ export default function SellCorrectionForm({
           <Card>
             <CardHeader>
               <CardTitle>Stock Correction Details</CardTitle>
+              <p className='text-muted-foreground text-sm'>
+                Status will be automatically set to PENDING
+              </p>
             </CardHeader>
             <CardContent className='space-y-6'>
- 
-
               <FormField
                 name='notes'
                 control={form.control}
@@ -525,6 +512,10 @@ export default function SellCorrectionForm({
                     <span className='text-primary text-2xl font-bold'>
                       ${totalAmount.toFixed(2)}
                     </span>
+                  </div>
+                  <div className='mt-2 text-sm text-muted-foreground'>
+                    <p>Reference will be automatically set to: {sellData.invoiceNo}</p>
+                    <p>Status will be automatically set to: PENDING</p>
                   </div>
                 </CardContent>
               </Card>

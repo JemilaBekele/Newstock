@@ -39,12 +39,34 @@ export const PERMISSIONS = {
       description: 'Delete role-permission by ID'
     }
   },
-
-  Employee: {
-    VIEW_DASHBOARD: {
+DASHBOARDS: {
+    MAIN_DASHBOARD: {
+      name: 'VIEW_MAIN_DASHBOARD',
+      description: 'View main dashboard'
+    },
+     VIEW_REPORT: {
+      name: 'VIEW_SALES_REPORT_VIEW_DASHBOARD',
+      description: 'View sales report'
+    },
+      VIEW_SELL_DASHBOARD: {
+      name: 'VIEW_SELL_DASHBOARD',
+      description: 'View comprehensive sell dashboard data'
+    },
+     VIEW_PRODUCT_DASHBOARD: {
+      name: 'VIEW_PRODUCT_DASHBOARD',
+      description: 'View comprehensive product dashboard data'
+    },
+      VIEW_Users_DASHBOARD: {
       name: 'VIEW_Users_DASHBOARD',
       description: 'View comprehensive inventory dashboard data'
     },
+       VIEW_SYSTEM_DASHBOARD: {
+      name: 'VIEW_SYSTEM_DASHBOARD',
+      description: 'View comprehensive system dashboard data'
+    },
+  },
+  Employee: {
+  
     CREATE: {
       name: 'CREATE_Employee',
       description: 'Register or create new Employee accounts'
@@ -112,10 +134,6 @@ export const PERMISSIONS = {
     DELETE: { name: 'DELETE_CUSTOMER', description: 'Delete customers' }
   },
   BRANCH: {
-    VIEW_DASHBOARD: {
-      name: 'VIEW_SYSTEM_DASHBOARD',
-      description: 'View comprehensive system dashboard data'
-    },
     CREATE: { name: 'CREATE_BRANCH', description: 'Create new branches' },
     VIEW_ALL: { name: 'VIEW_ALL_BRANCHES', description: 'View all branches' },
     UPDATE: { name: 'UPDATE_BRANCH', description: 'Update branch information' },
@@ -179,10 +197,7 @@ export const PERMISSIONS = {
     }
   },
   PRODUCT: {
-    VIEW_DASHBOARD: {
-      name: 'VIEW_PRODUCT_DASHBOARD',
-      description: 'View comprehensive product dashboard data'
-    },
+   
     CREATE: {
       name: 'CREATE_PRODUCT',
       description: 'Create new product'
@@ -191,9 +206,9 @@ export const PERMISSIONS = {
       name: 'VIEW_PRODUCT_ALL',
       description: 'View all product details'
     },
-    VIEW_BY_CODE: {
-      name: 'VIEW_PRODUCT_BY_CODE',
-      description: 'View product details by product code'
+    VIEW: {
+      name: 'VIEW',
+      description: 'View product details'
     },
     LIST: {
       name: 'LIST_PRODUCTS',
@@ -207,18 +222,7 @@ export const PERMISSIONS = {
       name: 'DELETE_PRODUCT',
       description: 'Delete product'
     },
-    MANAGE_UNITS: {
-      name: 'MANAGE_PRODUCT_UNITS',
-      description: 'Manage product unit conversions'
-    },
-    MANAGE_BATCHES: {
-      name: 'MANAGE_PRODUCT_BATCHES',
-      description: 'Manage product batches'
-    },
-    MANAGE_PRICES: {
-      name: 'MANAGE_PRODUCT_PRICES',
-      description: 'Manage additional product prices'
-    }
+
   },
   PRODUCT_BATCH: {
     CREATE: {
@@ -228,6 +232,10 @@ export const PERMISSIONS = {
     VIEW_ALL: {
       name: 'VIEW_ALL_PRODUCT_BATCHES',
       description: 'View all product batches'
+    },
+      VIEW: {
+      name: 'VIEW_PRODUCT_BATCHES',
+      description: 'View detail product batches'
     },
     UPDATE: {
       name: 'UPDATE_PRODUCT_BATCH',
@@ -301,10 +309,7 @@ export const PERMISSIONS = {
     }
   },
   SELL: {
-    VIEW_DASHBOARD: {
-      name: 'VIEW_SELL_DASHBOARD',
-      description: 'View comprehensive sell dashboard data'
-    },
+  
     CREATE: { name: 'CREATE_SELL', description: 'Create a new sell record' },
     VIEW: { name: 'VIEW_SELL', description: 'View details of a specific sell' },
     VIEW_ALL: { name: 'VIEW_ALL_SELLS', description: 'View all sell records' },
@@ -331,10 +336,6 @@ export const PERMISSIONS = {
       name: 'UPDATE_SELL_STATUS',
       description: 'Update status of a sale'
     },
-    UPDATE_PAYMENT_STATUS: {
-      name: 'UPDATE_PAYMENT_STATUS',
-      description: 'Update payment status of a sale'
-    },
     CANCEL: {
       name: 'CANCEL_SELL',
       description: 'Cancel a sell record'
@@ -344,18 +345,6 @@ export const PERMISSIONS = {
     CREATE: {
       name: 'CREATE_SELL_STOCK_CORRECTION',
       description: 'Create new sell stock corrections'
-    },
-    VIEW: {
-      name: 'VIEW_SELL_STOCK_CORRECTION',
-      description: 'View sell stock correction details'
-    },
-    VIEW_ALL: {
-      name: 'VIEW_ALL_SELL_STOCK_CORRECTIONS',
-      description: 'View all sell stock corrections'
-    },
-    UPDATE: {
-      name: 'UPDATE_SELL_STOCK_CORRECTION',
-      description: 'Update sell stock correction information'
     },
     APPROVE: {
       name: 'APPROVE_SELL_STOCK_CORRECTION',
@@ -394,10 +383,7 @@ export const PERMISSIONS = {
     }
   },
   REPORT: {
-    VIEW_TOTAL_SOLD: {
-      name: 'VIEW_TOTAL_SOLD',
-      description: 'View total sold products report'
-    },
+
     VIEW_ALL_TRENDS: {
       name: 'VIEW_ALL_SELLS_TREND',
       description: 'View sales trends across all sells'
@@ -406,18 +392,11 @@ export const PERMISSIONS = {
       name: 'VIEW_SALES_RANK',
       description: 'View ranked sales report'
     },
-    VIEW_REPORT: {
-      name: 'VIEW_SALES_REPORT_VIEW_DASHBOARD',
-      description: 'View sales report'
-    },
     RESET: {
       name: 'RESET_VIEW_DASHBOARD',
       description: 'Reset page'
     },
-    MAIN_DASHBOARD: {
-      name: 'VIEW_MAIN_DASHBOARD',
-      description: 'View main dashboard'
-    }
+  
   },
 
   MANAGE_STORE_AND_SHOPS: {

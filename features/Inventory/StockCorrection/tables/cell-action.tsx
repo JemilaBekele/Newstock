@@ -72,6 +72,7 @@ export const StockCorrectionCellAction: React.FC<
         <DropdownMenuContent align='end'>
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           {data.status !== 'APPROVED' && (
+            <>
             <PermissionGuard
               requiredPermission={PERMISSIONS.STOCK_CORRECTION.UPDATE.name}
             >
@@ -82,6 +83,10 @@ export const StockCorrectionCellAction: React.FC<
               >
                 <IconEdit className='mr-2 h-4 w-4' /> Update
               </DropdownMenuItem>
+</PermissionGuard>
+               <PermissionGuard
+              requiredPermission={PERMISSIONS.STOCK_CORRECTION.VIEW.name}
+            >
               <DropdownMenuItem
                 onClick={() =>
                   router.push(`/dashboard/StockCorrection/view?id=${data.id}`)
@@ -89,7 +94,7 @@ export const StockCorrectionCellAction: React.FC<
               >
                 <IconEye className='mr-2 h-4 w-4' /> View
               </DropdownMenuItem>
-            </PermissionGuard>
+            </PermissionGuard></>
           )}
           <PermissionGuard
             requiredPermission={PERMISSIONS.STOCK_CORRECTION.DELETE.name}
