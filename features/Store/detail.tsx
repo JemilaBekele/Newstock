@@ -441,7 +441,11 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
 
         // Get all sale items for viewing only
         const allSaleData = await getSellId(id);
-        setAllSaleItems(allSaleData);
+
+await new Promise((resolve) => setTimeout(resolve, 1000)); // 10 seconds
+
+setAllSaleItems(allSaleData);
+
 
         setLoadingCorrections(true);
         const corrections = await getSellStockCorrectionsfilterSellId(id);
