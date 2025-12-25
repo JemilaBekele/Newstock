@@ -1843,49 +1843,7 @@ setAllSaleItems(allSaleData);
       </AlertDialog>
 
       {/* Delivery Action Card - Only show if user has editable items and sale is not locked */}
-      {!isImmutable && selectedItems.length > 0 && (
-        <Card className='border-green-200 bg-green-50 shadow-lg dark:border-green-900 dark:bg-green-950'>
-          <CardHeader className='pb-3'>
-            <CardTitle className='flex items-center gap-2 text-xl font-bold text-green-800 dark:text-green-300'>
-              <Truck className='h-5 w-5' />
-              Deliver Selected Items
-            </CardTitle>
-          </CardHeader>
-
-          <CardContent className='space-y-4'>
-            <div className='flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
-              <div className='space-y-2'>
-                <p className='font-medium text-green-700 dark:text-green-400'>
-                  {selectedItems.length} item(s) selected for delivery
-                </p>
-
-                {!allSelectedItemsHaveBatches && (
-                  <div className='flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400'>
-                    <AlertTriangle className='h-4 w-4' />
-                    <span>
-                      Some selected items don&apos;t have complete batch
-                      assignments
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className='flex flex-col gap-2 sm:flex-row'>
-                <Button
-                  onClick={() => handleDelivery('partial')}
-                  disabled={updating || !allSelectedItemsHaveBatches}
-                  variant='default'
-                  className='bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800'
-                  size='lg'
-                >
-                  <Truck className='mr-2 h-5 w-5' />
-                  Deliver Selected ({selectedItems.length})
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+    
 
       {/* Main Sale Card */}
       <Card className='shadow-lg'>
@@ -2061,6 +2019,49 @@ setAllSaleItems(allSaleData);
           {/* Sale Items Table */}
           {allSaleItems.items && allSaleItems.items.length > 0 ? (
             <div className='space-y-6'>
+                {!isImmutable && selectedItems.length > 0 && (
+        <Card className='border-green-200 bg-green-50 shadow-lg dark:border-green-900 dark:bg-green-950'>
+          <CardHeader className='pb-3'>
+            <CardTitle className='flex items-center gap-2 text-xl font-bold text-green-800 dark:text-green-300'>
+              <Truck className='h-5 w-5' />
+              Deliver Selected Items
+            </CardTitle>
+          </CardHeader>
+
+          <CardContent className='space-y-4'>
+            <div className='flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
+              <div className='space-y-2'>
+                <p className='font-medium text-green-700 dark:text-green-400'>
+                  {selectedItems.length} item(s) selected for delivery
+                </p>
+
+                {!allSelectedItemsHaveBatches && (
+                  <div className='flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400'>
+                    <AlertTriangle className='h-4 w-4' />
+                    <span>
+                      Some selected items don&apos;t have complete batch
+                      assignments
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className='flex flex-col gap-2 sm:flex-row'>
+                <Button
+                  onClick={() => handleDelivery('partial')}
+                  disabled={updating || !allSelectedItemsHaveBatches}
+                  variant='default'
+                  className='bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800'
+                  size='lg'
+                >
+                  <Truck className='mr-2 h-56 w-5' />
+                  Deliver Selected ({selectedItems.length})
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
               {/* Editable Items (User's Shop) */}
               {editableItems.length > 0 && (
                 <div className='space-y-4'>
