@@ -5,7 +5,7 @@ import { getAllSellsstoregetAll } from '@/service/Sell';
 import { sellColumns } from './tables/columns';
 import { SaleStatus } from '@/models/Sell';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { AlertCircle, Clock, Check } from 'lucide-react';
+import { AlertCircle, Check } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,6 @@ import Link from 'next/link';
 
 type SellListingPageProps = object;
 
-// Status card component
 function StatusCard({
   title,
   count,
@@ -28,11 +27,12 @@ function StatusCard({
   variant?:
     | 'default'
     | 'approved'
-    | 'notApproved'
     | 'partial'
     | 'delivered'
     | 'cancelled'
-    | 'total';
+    | 'total'
+    | 'stock-pending'
+    | 'stock-partial';
   needsAttention?: boolean;
   selected?: boolean;
   href: string;
@@ -43,14 +43,13 @@ function StatusCard({
     total: 'border-border bg-card',
     approved:
       'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20',
-    notApproved: needsAttention
-      ? 'border-amber-300 bg-amber-50 dark:border-amber-600 dark:bg-amber-950/40 shadow-md ring-1 ring-amber-200 dark:ring-amber-800'
-      : 'border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950/20',
     partial:
       'border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/20',
     delivered:
       'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20',
-    cancelled: 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20'
+    cancelled: 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20',
+    'stock-pending': 'border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950/20',
+    'stock-partial': 'border-indigo-200 bg-indigo-50 dark:border-indigo-800 dark:bg-indigo-950/20'
   };
 
   const selectedStyles = selected
@@ -61,18 +60,11 @@ function StatusCard({
     default: 'text-foreground',
     total: 'text-foreground',
     approved: 'text-blue-700 dark:text-blue-400',
-    notApproved: needsAttention
-      ? 'text-amber-800 dark:text-amber-300'
-      : 'text-gray-700 dark:text-gray-400',
     partial: 'text-orange-700 dark:text-orange-400',
     delivered: 'text-green-700 dark:text-green-400',
-    cancelled: 'text-red-700 dark:text-red-400'
-  };
-
-  const iconColors = {
-    notApproved: needsAttention
-      ? 'text-amber-600 dark:text-amber-400'
-      : 'text-gray-500'
+    cancelled: 'text-red-700 dark:text-red-400',
+    'stock-pending': 'text-purple-700 dark:text-purple-400',
+    'stock-partial': 'text-indigo-700 dark:text-indigo-400'
   };
 
   return (
@@ -95,11 +87,6 @@ function StatusCard({
               {title}
             </Label>
           </div>
-          {variant === 'notApproved' && needsAttention && count > 0 && (
-            <div className='flex items-center'>
-              <AlertCircle className={`h-4 w-4 ${iconColors.notApproved}`} />
-            </div>
-          )}
         </CardHeader>
         <CardContent>
           <div className='flex items-center justify-between'>
@@ -112,22 +99,7 @@ function StatusCard({
                 Selected
               </Badge>
             )}
-            {variant === 'notApproved' && needsAttention && count > 0 && (
-              <div className='flex items-center'>
-                <Clock className={`h-4 w-4 ${iconColors.notApproved}`} />
-                <span className={`text-xs ${textColors.notApproved}`}>
-                  Needs approval
-                </span>
-              </div>
-            )}
           </div>
-          {variant === 'notApproved' && needsAttention && count > 0 && (
-            <div
-              className={`mt-1 text-xs ${textColors.notApproved} font-medium`}
-            >
-              Action required
-            </div>
-          )}
         </CardContent>
       </Card>
     </Link>
@@ -186,7 +158,7 @@ export default async function SellListingPage({}: SellListingPageProps) {
   };
 
   try {
-    // Fetch data from API
+    // Fetch data from API - Make sure SellStockCorrection is included
     const { data } = await getAllSellsstoregetAll({
       page,
       limit,
@@ -216,20 +188,40 @@ export default async function SellListingPage({}: SellListingPageProps) {
       // Check sale status enum value directly (case-sensitive)
       const saleStatusEnumMatch = item.saleStatus.includes(search);
 
+      // Check SellStockCorrection status
+      const hasStockCorrection = item.SellStockCorrection?.some(correction => 
+        correction.status.toLowerCase().includes(searchLower)
+      );
+
       return (
-        invoiceMatch || customerMatch || saleStatusMatch || saleStatusEnumMatch
+        invoiceMatch || 
+        customerMatch || 
+        saleStatusMatch || 
+        saleStatusEnumMatch ||
+        hasStockCorrection
       );
     });
 
     // Apply status filter if not 'all'
     if (statusFilter !== 'all') {
-      filteredData = filteredData.filter(
-        (item) => item.saleStatus === statusFilter
-      );
+      // Check if it's a stock correction filter
+      if (statusFilter.startsWith('stock-')) {
+        const stockStatus = statusFilter.replace('stock-', '').toUpperCase();
+        filteredData = filteredData.filter(
+          (item) => item.SellStockCorrection?.some(
+            correction => correction.status === stockStatus
+          )
+        );
+      } else {
+        // Regular sale status filter
+        filteredData = filteredData.filter(
+          (item) => item.saleStatus === statusFilter
+        );
+      }
     }
 
     // ────────────────────────────────────────────────────────────────
-    // Count sell statuses (using ALL data, not filtered by status)
+    // Count sell statuses and stock correction statuses
     // ────────────────────────────────────────────────────────────────
     const allStatusCounts = {
       [SaleStatus.APPROVED]: data.filter(
@@ -249,7 +241,20 @@ export default async function SellListingPage({}: SellListingPageProps) {
       ).length
     };
 
-    const totalSells = data.length; // All sells, not filtered
+    // Count SellStockCorrection statuses
+    const stockPendingCount = data.filter(
+      (item) => item.SellStockCorrection?.some(
+        correction => correction.status === 'PENDING'
+      )
+    ).length;
+
+    const stockPartialCount = data.filter(
+      (item) => item.SellStockCorrection?.some(
+        correction => correction.status === 'PARTIAL'
+      )
+    ).length;
+
+    const totalSells = data.length;
     const needsApprovalCount = allStatusCounts[SaleStatus.NOT_APPROVED];
 
     // Current filtered count for selected status
@@ -270,7 +275,7 @@ export default async function SellListingPage({}: SellListingPageProps) {
           className='space-y-3'
           value={statusFilter}
         >
-          <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6'>
+          <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-8'>
             <StatusCard
               title='All Sells'
               count={totalSells}
@@ -286,15 +291,6 @@ export default async function SellListingPage({}: SellListingPageProps) {
               selected={statusFilter === SaleStatus.APPROVED}
               value={SaleStatus.APPROVED}
               href={buildQueryString(SaleStatus.APPROVED)}
-            />
-            <StatusCard
-              title='Not Approved'
-              count={allStatusCounts[SaleStatus.NOT_APPROVED]}
-              variant='notApproved'
-              needsAttention={allStatusCounts[SaleStatus.NOT_APPROVED] > 0}
-              selected={statusFilter === SaleStatus.NOT_APPROVED}
-              value={SaleStatus.NOT_APPROVED}
-              href={buildQueryString(SaleStatus.NOT_APPROVED)}
             />
             <StatusCard
               title='Partially Delivered'
@@ -320,6 +316,24 @@ export default async function SellListingPage({}: SellListingPageProps) {
               value={SaleStatus.CANCELLED}
               href={buildQueryString(SaleStatus.CANCELLED)}
             />
+            {/* Stock Correction Status Cards */}
+            <StatusCard
+              title='Stock Pending'
+              count={stockPendingCount}
+              variant='stock-pending'
+              selected={statusFilter === 'stock-PENDING'}
+              value='stock-PENDING'
+              href={buildQueryString('stock-PENDING')}
+              needsAttention={stockPendingCount > 0}
+            />
+            <StatusCard
+              title='Stock Partial'
+              count={stockPartialCount}
+              variant='stock-partial'
+              selected={statusFilter === 'stock-PARTIAL'}
+              value='stock-PARTIAL'
+              href={buildQueryString('stock-PARTIAL')}
+            />
           </div>
         </RadioGroup>
 
@@ -332,8 +346,11 @@ export default async function SellListingPage({}: SellListingPageProps) {
                   Filter Applied
                 </Badge>
                 <span className='text-muted-foreground text-sm'>
-                  Showing {filteredCount} {statusFilter.toLowerCase()} sale
-                  {filteredCount === 1 ? '' : 's'}
+                  Showing {filteredCount} {
+                    statusFilter.startsWith('stock-') 
+                      ? statusFilter.replace('stock-', '').toLowerCase() 
+                      : statusFilter.toLowerCase()
+                  } sale{filteredCount === 1 ? '' : 's'}
                 </span>
               </div>
               <Link
@@ -346,8 +363,8 @@ export default async function SellListingPage({}: SellListingPageProps) {
           </div>
         )}
 
-        {/* Attention Banner if there are pending approvals */}
-        {needsApprovalCount > 0 && (
+        {/* Attention Banner if there are pending approvals or stock corrections */}
+        {(needsApprovalCount > 0 || stockPendingCount > 0) && (
           <div className='rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/20'>
             <div className='flex items-center gap-2'>
               <AlertCircle className='h-5 w-5 text-amber-600 dark:text-amber-400' />
@@ -356,9 +373,19 @@ export default async function SellListingPage({}: SellListingPageProps) {
               </h3>
             </div>
             <p className='mt-1 text-sm text-amber-700 dark:text-amber-400'>
-              You have {needsApprovalCount} sale
-              {needsApprovalCount === 1 ? '' : 's'} waiting for approval. Please
-              review and approve them to proceed with delivery.
+              {needsApprovalCount > 0 && stockPendingCount > 0 ? (
+                <>
+                  You have {needsApprovalCount} sale{needsApprovalCount === 1 ? '' : 's'} waiting for approval and {stockPendingCount} stock correction{stockPendingCount === 1 ? '' : 's'} pending. Please review them.
+                </>
+              ) : needsApprovalCount > 0 ? (
+                <>
+                  You have {needsApprovalCount} sale{needsApprovalCount === 1 ? '' : 's'} waiting for approval. Please review and approve them to proceed with delivery.
+                </>
+              ) : (
+                <>
+                  You have {stockPendingCount} stock correction{stockPendingCount === 1 ? '' : 's'} pending. Please review them.
+                </>
+              )}
             </p>
           </div>
         )}
@@ -377,7 +404,8 @@ export default async function SellListingPage({}: SellListingPageProps) {
         />
       </div>
     );
-  } catch  {
+  } catch (error) {
+    console.error('Error loading sells:', error);
     return (
       <div className='p-4 text-red-500'>
         Error loading sells. Please try again later.

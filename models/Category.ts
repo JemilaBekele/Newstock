@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface ICategory {
   id: string; // UUID string
   name: string;

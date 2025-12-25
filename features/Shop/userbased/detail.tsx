@@ -1165,8 +1165,7 @@ const SaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                                                 ? 'Addition'
                                                 : 'Reduction'}
                                             </Badge>
-                                          </TableCell>
-                                             <TableCell>
+                                          </TableCell>                                           <TableCell>
                                             {/* Show checkbox for PENDING or PARTIAL corrections where item is not yet DELIVERED */}
                                             {(correction.status === SellStockCorrectionStatus.PENDING || 
                                               correction.status === SellStockCorrectionStatus.PARTIAL) && 
