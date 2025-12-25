@@ -199,12 +199,13 @@ export default async function SellListingPage({}: SellListingPageProps) {
     // ────────────────────────────────────────────────────────────────
     let filteredData = data.filter((item) => {
       if (!search) return true;
+      const searchLower = search.toLowerCase();
 
       // Check invoice number (case-sensitive)
-      const invoiceMatch = item.invoiceNo?.includes(search);
+      const invoiceMatch = item.invoiceNo?.toLowerCase().includes(searchLower);
 
       // Check customer name (case-sensitive)
-      const customerMatch = item.customer?.name?.includes(search);
+      const customerMatch = item.customer?.name?.toLowerCase().includes(searchLower);
 
       // Check sale status (case-sensitive)
       const saleStatusDisplayText = getSaleStatusDisplayText(item.saleStatus);
