@@ -1566,7 +1566,7 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
               ) : (
                 <Lock className='h-4 w-4' />
               )}
-               Click to Unlock/Locked
+               Click to Unlock/Lock
             </Button>
           
         </div>

@@ -6,6 +6,7 @@ import { CalendarDays } from 'lucide-react';
 import { SellCellAction } from './cell-action';
 import { ISell, SaleStatus } from '@/models/Sell';
 import { Badge } from '@/components/ui/badge';
+import { useRouter } from 'next/navigation';
 
 const getSaleStatusColor = (status: SaleStatus) => {
   switch (status) {
@@ -41,14 +42,27 @@ export const sellColumns: ColumnDef<ISell>[] = [
     },
     enableColumnFilter: false
   },
-  {
-    accessorKey: 'invoiceNo',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Order No' />
-    ),
-    cell: ({ cell }) => <div>{cell.getValue<ISell['invoiceNo']>()}</div>,
-    enableColumnFilter: true
-  },
+    {
+     accessorKey: 'invoiceNo',
+     header: ({ column }) => (
+       <DataTableColumnHeader column={column} title='Order No' />
+     ),
+     cell: ({ cell, row }) => {
+       // eslint-disable-next-line react-hooks/rules-of-hooks
+       const router = useRouter();
+       const invoiceNo = cell.getValue<ISell['invoiceNo']>();
+       
+       return (
+         <div 
+           className='cursor-pointer hover:text-primary hover:underline'
+           onClick={() => router.push(`/dashboard/Sell/view?id=${row.original.id}`)}
+         >
+           {invoiceNo}
+         </div>
+       );
+     },
+     enableColumnFilter: true
+   },
   {
     accessorKey: 'customer',
     header: ({ column }) => (
