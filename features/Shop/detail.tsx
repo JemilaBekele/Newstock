@@ -1551,6 +1551,9 @@ const SaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                                   <TableHead className='w-25'>
                                     Type
                                   </TableHead>
+                                    <TableHead className='w-20'>
+                                                                      Status
+                                                                    </TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
@@ -1637,6 +1640,26 @@ const SaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                                                 : 'Reduction'}
                                             </Badge>
                                           </TableCell>
+                                              <TableCell>
+                                                                                      {/* Show checkbox for PENDING or PARTIAL corrections where item is not yet DELIVERED */}
+                                                                                      {(correction.status === SellStockCorrectionStatus.PENDING || 
+                                                                                        correction.status === SellStockCorrectionStatus.PARTIAL) && 
+                                                                                        item.itemSaleStatus === 'DELIVERED' ? (
+                                                                                        <Badge
+                                                                                          variant="default"
+                                                                                          className='capitalize bg-green-600 hover:bg-green-700'
+                                                                                        >
+                                                                                          Approved
+                                                                                        </Badge>
+                                                                                      ) : item.itemSaleStatus ? (
+                                                                                        <Badge
+                                                                                          variant="secondary"
+                                                                                          className='capitalize'
+                                                                                        >
+                                                                                          {item.itemSaleStatus.toLowerCase()}
+                                                                                        </Badge>
+                                                                                      ) : null}
+                                                                                    </TableCell>
                                         </TableRow>
                                       );
                                     }

@@ -1261,6 +1261,7 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
       
       // Clear the delivery selection for this correction
       setStockCorrectionDelivery((prev) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { [selectedCorrectionForApprove.id]: _, ...rest } = prev;
         return rest;
       });
@@ -1276,14 +1277,14 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
     }
   };
 
-  const handleCorrectionAction = async (
-    correctionId: string,
-    action: 'approve' | 'reject' | 'delete'
-  ) => {
-    setOpen(true);
-    setActionType(action);
-    setSelectedCorrectionId(correctionId);
-  };
+  // const handleCorrectionAction = async (
+  //   correctionId: string,
+  //   action: 'approve' | 'reject' | 'delete'
+  // ) => {
+  //   setOpen(true);
+  //   setActionType(action);
+  //   setSelectedCorrectionId(correctionId);
+  // };
 
   const onConfirm = async () => {
     if (!id && !selectedCorrectionId && actionType !== 'delete') return;
@@ -2249,8 +2250,8 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                               {item.unitOfMeasure?.name || 'Unknown Unit'}
                             </TableCell>
                             <TableCell>{item.quantity}</TableCell>
-                            <TableCell>${item.unitPrice.toFixed(2)}</TableCell>
-                            <TableCell>${item.totalPrice.toFixed(2)}</TableCell>
+                            <TableCell>{item.unitPrice.toFixed(2)}</TableCell>
+                            <TableCell>{item.totalPrice.toFixed(2)}</TableCell>
 
                             <TableCell>
                               <Badge
@@ -2361,8 +2362,8 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                             </TableCell>
 
                             <TableCell>{item.quantity}</TableCell>
-                            <TableCell>${item.unitPrice.toFixed(2)}</TableCell>
-                            <TableCell>${item.totalPrice.toFixed(2)}</TableCell>
+                            <TableCell>{item.unitPrice.toFixed(2)}</TableCell>
+                            <TableCell>{item.totalPrice.toFixed(2)}</TableCell>
 
                             <TableCell>
                               <Badge
@@ -2525,7 +2526,7 @@ Stock Corrections
                                     Type
                                   </TableHead>
                                   <TableHead className='w-20'>
-                                    Delivered
+                                    Status
                                   </TableHead>
                                 </TableRow>
                               </TableHeader>
@@ -2576,7 +2577,7 @@ Stock Corrections
                                             </div>
                                           </TableCell>
                                           <TableCell className='text-right'>
-                                            ${(item.unitPrice || 0).toFixed(2)}
+                                            {(item.unitPrice || 0).toFixed(2)}
                                           </TableCell>
                                           <TableCell className='text-center'>
                                             <Badge
@@ -2594,7 +2595,7 @@ Stock Corrections
                                             </Badge>
                                           </TableCell>
                                           <TableCell className='text-right font-medium'>
-                                            ${(item.totalPrice || 0).toFixed(2)}
+                                            {(item.totalPrice || 0).toFixed(2)}
                                           </TableCell>
                                           <TableCell>
                                             {item.unitOfMeasure?.name || 'N/A'}
@@ -2613,7 +2614,7 @@ Stock Corrections
                                                 : 'Reduction'}
                                             </Badge>
                                           </TableCell>
-                                     <TableCell>
+          <TableCell>
   {/* Show checkbox for PENDING or PARTIAL corrections where item is not yet DELIVERED */}
   {(correction.status === SellStockCorrectionStatus.PENDING || 
     correction.status === SellStockCorrectionStatus.PARTIAL) && 
@@ -2623,9 +2624,16 @@ Stock Corrections
       onCheckedChange={() => handleCorrectionItemDelivery(correction.id, item.id)}
       disabled={updating}
     />
+  ) : item.itemSaleStatus === 'DELIVERED' ? (
+    <Badge
+      variant="default"
+      className='capitalize bg-green-600 hover:bg-green-700'
+    >
+      Approved
+    </Badge>
   ) : item.itemSaleStatus ? (
     <Badge
-      variant={item.itemSaleStatus === 'DELIVERED' ? 'default' : 'secondary'}
+      variant="secondary"
       className='capitalize'
     >
       {item.itemSaleStatus.toLowerCase()}
@@ -2667,7 +2675,7 @@ Stock Corrections
                                     Correction Total:{' '}
                                   </span>
                                   <span className='text-lg font-bold text-blue-600 dark:text-blue-400'>
-                                    ${(correction.total || 0).toFixed(2)}
+                                    {(correction.total || 0).toFixed(2)}
                                   </span>
                                 </div>
                               </div>
