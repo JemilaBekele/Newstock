@@ -317,7 +317,7 @@ export default function SellCorrectionForm({
       await createSellStockCorrection(correctionData);
       toast.success('Sell stock correction created successfully');
       router.refresh();
-      router.push('/dashboard/Sell/view?id=' + sellId);
+      router.push(`/dashboard/Sell/view?id=${sellId}`)
     } catch (error: any) {
       toast.error(error?.message || 'Error creating sell stock correction');
     } finally {
