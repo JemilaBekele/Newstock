@@ -5,7 +5,7 @@ import { getCategories, getSubCategories } from '@/service/Category';
 import { getUnitsOfMeasure } from '@/service/UnitOfMeasure';
 import { normalizeImagePath } from '@/lib/norm'; // 👈 import helper
 import { toast } from 'sonner';
-import { getShopsapi } from '@/service/shop';
+import { getShopallapi } from '@/service/shop';
 
 type TProductViewPageProps = {
   productId: string;
@@ -44,7 +44,7 @@ export default async function ProductViewPage({
     getCategories(),
     getSubCategories(),
     getUnitsOfMeasure(),
-    getShopsapi()
+    getShopallapi()
   ]);
 
   return (

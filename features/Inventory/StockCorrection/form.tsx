@@ -2,8 +2,6 @@
 'use client';
 
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import Select from 'react-select';
@@ -43,37 +41,22 @@ import {
 } from '@/service/StockCorrection';
 import { TransferEntityType } from '@/models/transfer';
 
-// Zod schema - updated to require at least one location
-const formSchema = z
-  .object({
-    storeId: z.string().optional(),
-    shopId: z.string().optional(),
-    reason: z.enum([
-      'PURCHASE_ERROR',
-      'TRANSFER_ERROR',
-      'EXPIRED',
-      'DAMAGED',
-      'MANUAL_ADJUSTMENT'
-    ]),
-    reference: z.string().optional(),
-    notes: z.string().optional(),
-    items: z
-      .array(
-        z.object({
-          productId: z.string().min(1, 'Product is required'),
-          batchId: z.string().optional(),
-          unitOfMeasureId: z.string().min(1, 'Unit of measure is required'),
-          quantity: z
-            .number()
-            .refine((val) => val !== 0, 'Quantity cannot be zero')
-        })
-      )
-      .min(1, 'At least one item is required')
-  })
-  .refine((data) => data.storeId || data.shopId, {
-    message: 'Either store or shop must be selected',
-    path: ['storeId'] // This will show the error on the store field
-  });
+// Define types for form data
+interface FormItemType {
+  productId: string;
+  batchId: string;
+  unitOfMeasureId: string;
+  quantity: number | string; // Allow string for free input
+}
+
+interface FormDataType {
+  storeId: string;
+  shopId: string;
+  reason: 'PURCHASE_ERROR' | 'TRANSFER_ERROR' | 'EXPIRED' | 'DAMAGED' | 'MANUAL_ADJUSTMENT';
+  reference: string;
+  notes: string;
+  items: FormItemType[];
+}
 
 interface StockCorrectionFormProps {
   initialData: IStockCorrection | null;
@@ -103,8 +86,8 @@ export default function StockCorrectionForm({
   const [initialItemsLoaded, setInitialItemsLoaded] = useState(false);
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  // Initialize form without Zod
+  const form = useForm<FormDataType>({
     defaultValues: {
       storeId: initialData?.storeId || '',
       shopId: initialData?.shopId || '',
@@ -122,6 +105,48 @@ export default function StockCorrectionForm({
 
   const locationType = form.watch('storeId') ? 'store' : 'shop';
   const locationId = form.watch('storeId') || form.watch('shopId');
+
+  // Validation function
+  const validateForm = (data: FormDataType) => {
+    const errors: any = {};
+
+    // Check if either store or shop is selected
+    if (!data.storeId && !data.shopId) {
+      errors.storeId = 'Either store or shop must be selected';
+    }
+
+    // Validate items
+    if (!data.items || data.items.length === 0) {
+      errors.items = 'At least one item is required';
+    } else {
+      data.items.forEach((item, index) => {
+        if (!item.productId) {
+          errors.items = errors.items || {};
+          errors.items[index] = errors.items[index] || {};
+          errors.items[index].productId = 'Product is required';
+        }
+        if (!item.unitOfMeasureId) {
+          errors.items = errors.items || {};
+          errors.items[index] = errors.items[index] || {};
+          errors.items[index].unitOfMeasureId = 'Unit of measure is required';
+        }
+        if (item.quantity === '' || item.quantity === null || item.quantity === undefined) {
+          errors.items = errors.items || {};
+          errors.items[index] = errors.items[index] || {};
+          errors.items[index].quantity = 'Quantity is required';
+        } else if (typeof item.quantity === 'string') {
+          const num = parseFloat(item.quantity);
+          if (isNaN(num)) {
+            errors.items = errors.items || {};
+            errors.items[index] = errors.items[index] || {};
+            errors.items[index].quantity = 'Quantity must be a valid number';
+          }
+        }
+      });
+    }
+
+    return errors;
+  };
 
   // Helper function to calculate available quantity in selected unit
   const calculateAvailableQuantity = (
@@ -321,14 +346,41 @@ export default function StockCorrectionForm({
     })
   };
 
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  const onSubmit = async (data: FormDataType) => {
+    // Validate form
+    const errors = validateForm(data);
+    
+    if (Object.keys(errors).length > 0) {
+      // Set errors in react-hook-form
+      Object.keys(errors).forEach((key) => {
+        if (key === 'items') {
+          // Handle nested errors for items
+          Object.keys(errors.items).forEach((itemIndex) => {
+            Object.keys(errors.items[itemIndex]).forEach((field) => {
+              form.setError(`items.${itemIndex}.${field}` as any, {
+                type: 'manual',
+                message: errors.items[itemIndex][field]
+              });
+            });
+          });
+        } else {
+          form.setError(key as any, {
+            type: 'manual',
+            message: errors[key]
+          });
+        }
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
+      // Convert quantity strings to numbers
       const payload = {
         ...data,
         items: data.items.map((item) => ({
           ...item,
-          quantity: Number(item.quantity)
+          quantity: typeof item.quantity === 'string' ? parseFloat(item.quantity) : item.quantity
         }))
       };
 
@@ -381,7 +433,7 @@ export default function StockCorrectionForm({
               <FormField
                 control={form.control}
                 name='storeId'
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel>Store (Optional)</FormLabel>
                     <ShadcnSelect
@@ -420,7 +472,11 @@ export default function StockCorrectionForm({
                         ))}
                       </SelectContent>
                     </ShadcnSelect>
-                    <FormMessage />
+                    {fieldState.error && (
+                      <p className='text-sm font-medium text-destructive'>
+                        {fieldState.error.message}
+                      </p>
+                    )}
                   </FormItem>
                 )}
               />
@@ -428,7 +484,7 @@ export default function StockCorrectionForm({
               <FormField
                 control={form.control}
                 name='shopId'
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel>Shop (Optional)</FormLabel>
                     <ShadcnSelect
@@ -464,7 +520,11 @@ export default function StockCorrectionForm({
                         ))}
                       </SelectContent>
                     </ShadcnSelect>
-                    <FormMessage />
+                    {fieldState.error && (
+                      <p className='text-sm font-medium text-destructive'>
+                        {fieldState.error.message}
+                      </p>
+                    )}
                   </FormItem>
                 )}
               />
@@ -472,7 +532,7 @@ export default function StockCorrectionForm({
               <FormField
                 control={form.control}
                 name='reason'
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel>Reason</FormLabel>
                     <ShadcnSelect
@@ -498,7 +558,11 @@ export default function StockCorrectionForm({
                         </SelectItem>
                       </SelectContent>
                     </ShadcnSelect>
-                    <FormMessage />
+                    {fieldState.error && (
+                      <p className='text-sm font-medium text-destructive'>
+                        {fieldState.error.message}
+                      </p>
+                    )}
                   </FormItem>
                 )}
               />
@@ -506,13 +570,17 @@ export default function StockCorrectionForm({
               <FormField
                 control={form.control}
                 name='reference'
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel>Reference (Optional)</FormLabel>
                     <FormControl>
                       <Input placeholder='Enter reference' {...field} />
                     </FormControl>
-                    <FormMessage />
+                    {fieldState.error && (
+                      <p className='text-sm font-medium text-destructive'>
+                        {fieldState.error.message}
+                      </p>
+                    )}
                   </FormItem>
                 )}
               />
@@ -521,7 +589,7 @@ export default function StockCorrectionForm({
             <FormField
               control={form.control}
               name='items'
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <FormItem>
                   <FormLabel>Items</FormLabel>
                   {loadingProducts && <div></div>}
@@ -581,6 +649,8 @@ export default function StockCorrectionForm({
                                 data: storeStockItem
                               }));
 
+                        const itemError = fieldState.error?.[index];
+
                         return (
                           <div
                             key={index}
@@ -618,6 +688,11 @@ export default function StockCorrectionForm({
                                 isDisabled={loadingProducts}
                                 styles={isDark ? darkStyles : {}}
                               />
+                              {itemError?.productId && (
+                                <p className='text-sm font-medium text-destructive mt-1'>
+                                  {itemError.productId.message}
+                                </p>
+                              )}
                             </div>
 
                             <div>
@@ -717,25 +792,62 @@ export default function StockCorrectionForm({
                                 isDisabled={!item.productId}
                                 styles={isDark ? darkStyles : {}}
                               />
+                              {itemError?.unitOfMeasureId && (
+                                <p className='text-sm font-medium text-destructive mt-1'>
+                                  {itemError.unitOfMeasureId.message}
+                                </p>
+                              )}
                             </div>
 
                             <div>
-                              <Input
-                                type='number'
-                                placeholder='Qty'
-                                value={item.quantity}
-                                onChange={(e) => {
-                                  const newItems = [...field.value];
-                                  const quantity = Number(e.target.value);
-                                  newItems[index].quantity = isNaN(quantity)
-                                    ? 0
-                                    : quantity;
-                                  field.onChange(newItems);
-                                }}
+                              <FormField
+                                control={form.control}
+                                name={`items.${index}.quantity`}
+                                render={({ field: quantityField, fieldState: quantityFieldState }) => (
+                                  <div>
+                                    <Input
+                                      type='text'
+                                      inputMode='decimal'
+                                      placeholder='Qty'
+                                      value={quantityField.value.toString()}
+                                      onChange={(e) => {
+                                        const value = e.target.value;
+                                        
+                                        // Allow numbers, decimal point, and minus sign
+                                        const validPattern = /^-?\d*\.?\d*$/;
+                                        
+                                        if (validPattern.test(value)) {
+                                          quantityField.onChange(value);
+                                        }
+                                      }}
+                                      onBlur={(e) => {
+                                        const value = e.target.value;
+                                        if (value === '' || value === '-' || value === '.') {
+                                          // Set to 0 if empty or invalid
+                                          quantityField.onChange('0');
+                                        } else if (value.endsWith('.')) {
+                                          // Remove trailing decimal point
+                                          quantityField.onChange(value.slice(0, -1));
+                                        }
+                                      }}
+                                    />
+                                    <div className='mt-1 text-xs text-gray-500'>
+                                      {(() => {
+                                        const numValue = parseFloat(quantityField.value.toString());
+                                        if (isNaN(numValue)) {
+                                          return 'Enter valid number';
+                                        }
+                                        return numValue < 0 ? 'Subtraction' : numValue > 0 ? 'Addition' : 'Zero adjustment';
+                                      })()}
+                                    </div>
+                                    {quantityFieldState.error && (
+                                      <p className='text-sm font-medium text-destructive mt-1'>
+                                        {quantityFieldState.error.message}
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
                               />
-                              <div className='mt-1 text-xs text-gray-500'>
-                                {item.quantity < 0 ? 'Subtraction' : 'Addition'}
-                              </div>
                             </div>
 
                             <div className='text-muted-foreground text-sm'>
@@ -784,7 +896,11 @@ export default function StockCorrectionForm({
                       </div>
                     </div>
                   </FormControl>
-                  <FormMessage />
+                  {fieldState.error && typeof fieldState.error === 'object' && 'message' in fieldState.error && (
+                    <p className='text-sm font-medium text-destructive'>
+                      {fieldState.error.message as string}
+                    </p>
+                  )}
                 </FormItem>
               )}
             />
@@ -792,13 +908,17 @@ export default function StockCorrectionForm({
             <FormField
               control={form.control}
               name='notes'
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <FormItem>
                   <FormLabel>Notes</FormLabel>
                   <FormControl>
                     <Input placeholder='Enter notes (optional)' {...field} />
                   </FormControl>
-                  <FormMessage />
+                  {fieldState.error && (
+                    <p className='text-sm font-medium text-destructive'>
+                      {fieldState.error.message}
+                    </p>
+                  )}
                 </FormItem>
               )}
             />

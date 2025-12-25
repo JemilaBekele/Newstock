@@ -54,6 +54,15 @@ export const getShopsall = async (req?: IncomingMessage) => {
     throw error;
   }
 };
+export const getShopallapi = async () => {
+  try {
+    const response = await api.get(`/shops/get/all`);
+
+    return response.data.shops as IShop[];
+  } catch (error) {
+    throw error;
+  }
+};
 export const getShopsapi = async () => {
   try {
     const response = await api.get(`/shops`);
