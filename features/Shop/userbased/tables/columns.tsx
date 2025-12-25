@@ -55,7 +55,7 @@ export const sellColumns: ColumnDef<ISell>[] = [
        return (
          <div 
            className='cursor-pointer hover:text-primary hover:underline'
-           onClick={() => router.push(`/dashboard/Sell/view?id=${row.original.id}`)}
+           onClick={() => router.push(`/dashboard/UserBasedSell/view?id=${row.original.id}`)}
          >
            {invoiceNo}
          </div>
