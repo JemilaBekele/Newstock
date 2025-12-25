@@ -1555,7 +1555,6 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
       {/* Print Button and Unlock Button (if locked) */}
       <div className='flex justify-between gap-2'>
         <div>
-          {isSaleLocked && (
             <Button
               onClick={() => setUnlockDialog(true)}
               variant='destructive'
@@ -1567,9 +1566,9 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
               ) : (
                 <Lock className='h-4 w-4' />
               )}
-              Sale is Locked - Click to Unlock
+               Click to Unlock/Locked
             </Button>
-          )}
+          
         </div>
         <div className='flex gap-2'>
           {/* Clear All Button */}
