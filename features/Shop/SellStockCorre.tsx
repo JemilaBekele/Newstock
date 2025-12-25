@@ -24,7 +24,7 @@ import { ISell } from '@/models/Sell';
 import { ISellStockCorrection } from '@/models/SellStockCorrection';
 import { createSellStockCorrection } from '@/service/SellStockCorrection';
 
-// Updated schema without status and reference
+// Updated schema with quantity validation
 const formSchema = z.object({
   notes: z.string().optional(),
   items: z.array(
@@ -125,6 +125,47 @@ export default function SellCorrectionForm({
     return batches.reduce((sum, batch) => sum + (batch.quantity || 0), 0);
   };
 
+  // Validate if adjustment quantity exceeds original quantity
+  const validateAdjustmentQuantity = (
+    itemIndex: number,
+    batchIndex: number,
+    newQuantity: number,
+    originalSellBatchQuantity: number
+  ): boolean => {
+    const currentItems = form.getValues('items');
+    const item = currentItems[itemIndex];
+    
+    if (!item || !item.batches) return false;
+
+    // Calculate total adjustment so far (excluding current batch)
+    let totalAdjustment = 0;
+    item.batches.forEach((batch, idx) => {
+      if (idx !== batchIndex) {
+        totalAdjustment += batch.quantity || 0;
+      }
+    });
+    
+    // Add the new quantity
+    totalAdjustment += newQuantity;
+    
+    // Get the original total quantity for this item from sell data
+    const originalItemQuantity = Math.abs(sellData?.items?.[itemIndex]?.quantity || 0);
+    
+    // Check if total adjustment exceeds original quantity
+    if (Math.abs(totalAdjustment) > originalItemQuantity) {
+      toast.error(`Adjustment cannot exceed original quantity of ${originalItemQuantity}`);
+      return false;
+    }
+
+    // Also check individual batch adjustment doesn't exceed original batch quantity
+    if (Math.abs(newQuantity) > Math.abs(originalSellBatchQuantity)) {
+      toast.error(`Batch adjustment cannot exceed original batch quantity of ${Math.abs(originalSellBatchQuantity)}`);
+      return false;
+    }
+
+    return true;
+  };
+
   // Update item quantity and total price when batches change
   const updateItemFromBatches = (itemIndex: number) => {
     const currentItems = form.getValues('items');
@@ -132,6 +173,14 @@ export default function SellCorrectionForm({
 
     if (item && item.batches) {
       const newQuantity = calculateItemQuantityFromBatches(item.batches);
+      const originalItemQuantity = Math.abs(sellData?.items?.[itemIndex]?.quantity || 0);
+      
+      // Validate the total adjustment doesn't exceed original quantity
+      if (Math.abs(newQuantity) > originalItemQuantity) {
+        toast.error(`Total adjustment cannot exceed original quantity of ${originalItemQuantity}`);
+        return;
+      }
+
       const totalPrice = Math.abs(newQuantity) * item.unitPrice;
 
       const updatedItems = [...currentItems];
@@ -152,6 +201,12 @@ export default function SellCorrectionForm({
   ) => {
     const currentItems = form.getValues('items');
     const item = currentItems[itemIndex];
+    const originalSellBatchQuantity = sellData?.items?.[itemIndex]?.batches?.[batchIndex]?.quantity || 0;
+
+    // Validate the adjustment
+    if (!validateAdjustmentQuantity(itemIndex, batchIndex, newQuantity, originalSellBatchQuantity)) {
+      return;
+    }
 
     if (item && item.batches) {
       const updatedBatches = [...item.batches];
@@ -178,6 +233,32 @@ export default function SellCorrectionForm({
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     if (!sellData) {
       toast.error('Sell data not found');
+      return;
+    }
+
+    // Final validation before submission
+    let hasExceededQuantity = false;
+    
+    data.items.forEach((item, itemIndex) => {
+      const originalItemQuantity = Math.abs(sellData.items?.[itemIndex]?.quantity || 0);
+      const totalAdjustment = Math.abs(item.quantity);
+      
+      if (totalAdjustment > originalItemQuantity) {
+        toast.error(`Item "${sellData.items?.[itemIndex]?.product?.name || 'Unknown'}" adjustment (${totalAdjustment}) exceeds original quantity (${originalItemQuantity})`);
+        hasExceededQuantity = true;
+      }
+
+      // Validate each batch
+      item.batches.forEach((batch, batchIndex) => {
+        const originalBatchQuantity = Math.abs(sellData.items?.[itemIndex]?.batches?.[batchIndex]?.quantity || 0);
+        if (Math.abs(batch.quantity) > originalBatchQuantity) {
+          toast.error(`Batch adjustment (${Math.abs(batch.quantity)}) exceeds original batch quantity (${originalBatchQuantity})`);
+          hasExceededQuantity = true;
+        }
+      });
+    });
+
+    if (hasExceededQuantity) {
       return;
     }
 
@@ -313,9 +394,7 @@ export default function SellCorrectionForm({
           <Card>
             <CardHeader>
               <CardTitle>Stock Correction Details</CardTitle>
-              <p className='text-muted-foreground text-sm'>
-                Status will be automatically set to PENDING
-              </p>
+           
             </CardHeader>
             <CardContent className='space-y-6'>
               <FormField
@@ -347,13 +426,16 @@ export default function SellCorrectionForm({
                       {items?.map((item, itemIndex) => {
                         const product = sellData.items?.[itemIndex]?.product;
                         const shop = sellData.items?.[itemIndex]?.shop;
-                        const originalQuantity =
-                          sellData.items?.[itemIndex]?.quantity || 0;
+                        const originalQuantity = Math.abs(
+                          sellData.items?.[itemIndex]?.quantity || 0
+                        );
                         const batchTotalQuantity =
                           calculateItemQuantityFromBatches(item.batches || []);
+                        const remainingQuantity = originalQuantity - Math.abs(batchTotalQuantity);
+                        
                         return (
                           <Card key={itemIndex} className='p-4'>
-                            <div className='mb-4 grid grid-cols-1 gap-4 md:grid-cols-4'>
+                            <div className='mb-4 grid grid-cols-1 gap-4 md:grid-cols-5'>
                               <div>
                                 <label className='text-muted-foreground text-sm font-medium'>
                                   Product
@@ -376,10 +458,18 @@ export default function SellCorrectionForm({
                               </div>
                               <div>
                                 <label className='text-muted-foreground text-sm font-medium'>
+                                  Remaining
+                                </label>
+                                <p className={`text-sm font-medium ${remainingQuantity < 0 ? 'text-destructive' : ''}`}>
+                                  {remainingQuantity}
+                                </p>
+                              </div>
+                              <div>
+                                <label className='text-muted-foreground text-sm font-medium'>
                                   Unit Price
                                 </label>
                                 <p className='text-sm'>
-                                  ${item.unitPrice.toFixed(2)}
+                                  {item.unitPrice.toFixed(2)}
                                 </p>
                               </div>
                             </div>
@@ -390,13 +480,18 @@ export default function SellCorrectionForm({
                                 <FormLabel>
                                   Quantity Adjustment (Auto-calculated)
                                 </FormLabel>
-                                <div className='bg-muted/50 rounded-md border p-3'>
-                                  <p className='text-center text-lg font-semibold'>
+                                <div className={`rounded-md border p-3 ${Math.abs(item.quantity) > originalQuantity ? 'border-destructive bg-destructive/10' : 'bg-muted/50'}`}>
+                                  <p className={`text-center text-lg font-semibold ${Math.abs(item.quantity) > originalQuantity ? 'text-destructive' : ''}`}>
                                     {item.quantity}
                                   </p>
                                   <p className='text-muted-foreground mt-1 text-center text-xs'>
                                     Sum of batch quantities:{' '}
                                     {batchTotalQuantity}
+                                    {Math.abs(item.quantity) > originalQuantity && (
+                                      <span className='block text-destructive'>
+                                        Exceeds original quantity!
+                                      </span>
+                                    )}
                                   </p>
                                 </div>
                                 <FormMessage>
@@ -412,7 +507,7 @@ export default function SellCorrectionForm({
                                   Total Price
                                 </label>
                                 <p className='text-lg font-semibold'>
-                                  ${item.totalPrice.toFixed(2)}
+                                  {item.totalPrice.toFixed(2)}
                                 </p>
                               </div>
                             </div>
@@ -422,8 +517,7 @@ export default function SellCorrectionForm({
                               <div className='space-y-2'>
                                 <FormLabel>Batch Adjustments</FormLabel>
                                 <div className='text-muted-foreground mb-2 text-sm'>
-                                  Adjust batch quantities below. The total
-                                  quantity above will update automatically.
+                                  
                                 </div>
                                 {item.batches.map((batch, batchIndex) => {
                                   const sellBatch =
@@ -433,11 +527,13 @@ export default function SellCorrectionForm({
                                   const batchInfo = sellBatch?.batch;
                                   const availableQty =
                                     batchInfo?.availableQuantity || 0;
+                                  const originalBatchQuantity = Math.abs(sellBatch?.quantity || 0);
+                                  const remainingBatchQty = originalBatchQuantity - Math.abs(batch.quantity || 0);
 
                                   return (
                                     <div
                                       key={batchIndex}
-                                      className='grid grid-cols-1 gap-2 rounded-md border p-3 md:grid-cols-4'
+                                      className={`grid grid-cols-1 gap-2 rounded-md border p-3 md:grid-cols-5 ${Math.abs(batch.quantity || 0) > originalBatchQuantity ? 'border-destructive bg-destructive/10' : ''}`}
                                     >
                                       <div>
                                         <label className='text-muted-foreground text-xs font-medium'>
@@ -449,10 +545,18 @@ export default function SellCorrectionForm({
                                       </div>
                                       <div>
                                         <label className='text-muted-foreground text-xs font-medium'>
-                                          Available
+                                          Avilable Qty
                                         </label>
-                                        <p className='text-sm'>
+                                          <p className='text-sm'>
                                           {availableQty}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <label className='text-muted-foreground text-xs font-medium'>
+                                          Remaining
+                                        </label>
+                                        <p className={`text-sm font-medium ${remainingBatchQty < 0 ? 'text-destructive' : ''}`}>
+                                          {remainingBatchQty}
                                         </p>
                                       </div>
                                       <FormItem>
@@ -475,14 +579,20 @@ export default function SellCorrectionForm({
                                                 value === '' ? 0 : Number(value)
                                               );
                                             }}
+                                            className={Math.abs(batch.quantity || 0) > originalBatchQuantity ? 'border-destructive' : ''}
                                           />
                                         </FormControl>
+                                        {Math.abs(batch.quantity || 0) > originalBatchQuantity && (
+                                          <p className='text-destructive text-xs mt-1'>
+                                            Exceeds original batch quantity!
+                                          </p>
+                                        )}
                                       </FormItem>
                                       <div>
                                         <label className='text-muted-foreground text-xs font-medium'>
                                           Current
                                         </label>
-                                        <p className='text-sm font-medium'>
+                                        <p className={`text-sm font-medium ${Math.abs(batch.quantity || 0) > originalBatchQuantity ? 'text-destructive' : ''}`}>
                                           {batch.quantity}
                                         </p>
                                       </div>
@@ -510,7 +620,7 @@ export default function SellCorrectionForm({
                       Total Correction Amount:
                     </span>
                     <span className='text-primary text-2xl font-bold'>
-                      ${totalAmount.toFixed(2)}
+                      {totalAmount.toFixed(2)}
                     </span>
                   </div>
                   <div className='mt-2 text-sm text-muted-foreground'>
