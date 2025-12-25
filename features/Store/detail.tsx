@@ -52,7 +52,7 @@ import { deliverAllSaleItems, completeSaleDelivery } from '@/service/Sell';
 import {
   approveSellStockCorrection,
   deleteSellStockCorrection,
-  getSellStockCorrectionsBySellId,
+  getSellStockCorrectionsfilterSellId,
   rejectSellStockCorrection
 } from '@/service/SellStockCorrection';
 import { unlockSellById } from '@/service/Sell'; // Import the unlock function
@@ -444,7 +444,7 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
         setAllSaleItems(allSaleData);
 
         setLoadingCorrections(true);
-        const corrections = await getSellStockCorrectionsBySellId(id);
+        const corrections = await getSellStockCorrectionsfilterSellId(id);
         setStockCorrections(corrections);
 
         calculateNetTotalAdjustment(corrections, allSaleData);
@@ -1525,14 +1525,6 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                       );
                     })}
                   </div>
-                  <div className='mt-4 text-sm text-gray-600'>
-                    <p>Status will be:</p>
-                    <ul className='list-disc pl-5 mt-2'>
-                      <li><strong>APPROVED</strong> - All items delivered</li>
-                      <li><strong>PARTIAL</strong> - Some items delivered</li>
-                      <li><strong>PENDING</strong> - No items delivered</li>
-                    </ul>
-                  </div>
                 </>
               )}
             </AlertDialogDescription>
@@ -1581,17 +1573,6 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
         </div>
         <div className='flex gap-2'>
           {/* Clear All Button */}
-          {selectedItems.length > 0 && (
-            <Button
-              onClick={clearAllBatchAssignments}
-              variant='destructive'
-              className='flex items-center gap-2'
-              disabled={updating}
-            >
-              <Trash2 className='h-4 w-4' />
-              Clear All Assignments
-            </Button>
-          )}
           <Button
             onClick={handlePrint}
             variant='outline'
@@ -2421,7 +2402,7 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
             <CardHeader className='flex flex-row items-center justify-between'>
               <CardTitle className='flex items-center gap-2 text-xl font-bold'>
                 <AlertTriangle className='text-amber-500' />
-                Stock Corrections
+Stock Corrections
                 {stockCorrections.length > 0 && (
                   <Badge variant='secondary' className='ml-2'>
                     {stockCorrections.length}
@@ -2478,49 +2459,6 @@ const StoreSaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
       >
         <Truck className='mr-2 h-4 w-4' />
         Approve with Delivery
-      </Button>
-      {correction.status === SellStockCorrectionStatus.PENDING && (
-        <>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() =>
-              handleCorrectionAction(
-                correction.id,
-                'approve'
-              )
-            }
-            disabled={updating}
-          >
-            Approve All
-          </Button>
-          <Button
-            variant='destructive'
-            size='sm'
-            onClick={() =>
-              handleCorrectionAction(
-                correction.id,
-                'reject'
-              )
-            }
-            disabled={updating}
-          >
-            Reject
-          </Button>
-        </>
-      )}
-      <Button
-        variant='outline'
-        size='sm'
-        onClick={() =>
-          handleCorrectionAction(
-            correction.id,
-            'delete'
-          )
-        }
-        disabled={updating}
-      >
-        Delete
       </Button>
     </>
   )}

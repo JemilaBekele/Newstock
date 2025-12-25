@@ -96,7 +96,7 @@ export const getSellStockCorrectionByReference = async (
   }
 };
 
-// ✅ Get sell stock corrections by sell ID
+// ✅ Get sell stock corrections by sell ID 
 export const getSellStockCorrectionsBySellId = async (
   sellId: string,
   req?: IncomingMessage
@@ -105,6 +105,20 @@ export const getSellStockCorrectionsBySellId = async (
     const axiosInstance = axiosWithAuth(req);
     const response = await axiosInstance.get(
       `/sells/${sellId}/stock-corrections`
+    );
+    return response.data.sellStockCorrections as ISellStockCorrection[];
+  } catch (error) {
+    throw error;
+  }
+};
+export const getSellStockCorrectionsfilterSellId = async (
+  sellId: string,
+  req?: IncomingMessage
+) => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+    const response = await axiosInstance.get(
+      `/sells/${sellId}/stock/corrections/filter/stock`
     );
     return response.data.sellStockCorrections as ISellStockCorrection[];
   } catch (error) {

@@ -1461,19 +1461,6 @@ const SaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                               SellStockCorrectionStatus.PENDING && (
                               <>
                                 <Button
-                                  variant='default'
-                                  size='sm'
-                                  onClick={() =>
-                                    handleCorrectionAction(
-                                      correction.id,
-                                      'approve'
-                                    )
-                                  }
-                                  disabled={updating}
-                                >
-                                  Approve
-                                </Button>
-                                <Button
                                   variant='destructive'
                                   size='sm'
                                   onClick={() =>
