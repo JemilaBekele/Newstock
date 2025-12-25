@@ -26,8 +26,8 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { IProductBatch } from '@/models/Product';
-import { getStores } from '@/service/store';
-import { getShops } from '@/service/shop';
+import { getStores, getStoresall } from '@/service/store';
+import { getShops, getShopsall } from '@/service/shop';
 import {
   getProductBatches,
   getUnitOfMeasuresByProductId
@@ -73,6 +73,8 @@ export default function TransferForm({
   const [isLoading, setIsLoading] = useState(false);
   const [stores, setStores] = useState<any[]>([]);
   const [shops, setShops] = useState<any[]>([]);
+   const [disstores, setDisstores] = useState<any[]>([]);
+  const [disshops, setDisshops] = useState<any[]>([]);
   const [storeStockItems, setStoreStockItems] = useState<any[]>([]);
   const [batches, setBatches] = useState<{ [key: string]: IProductBatch[] }>(
     {}
@@ -158,12 +160,18 @@ export default function TransferForm({
     const fetchData = async () => {
       setLoadingStoresShops(true); // Start loading
       try {
-        const [storesData, shopsData] = await Promise.all([
+        const [storesData, shopsData, disstoresData, disshopsData] = await Promise.all([
           getStores(),
-          getShops()
+          getShops(),
+          getShopsall(),
+          getStoresall(),
         ]);
         setStores(storesData);
         setShops(shopsData);
+        setDisshops(disstoresData);
+                setDisstores(disshopsData);
+
+
       } catch  {
         toast.error('Failed to load stores or shops');
       } finally {
@@ -639,7 +647,7 @@ export default function TransferForm({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {stores.map((store) => (
+                            {disstores.map((store) => (
                               <SelectItem
                                 key={store.id}
                                 value={store.id.toString()}
@@ -672,7 +680,7 @@ export default function TransferForm({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {shops.map((shop) => (
+                            {disshops.map((shop) => (
                               <SelectItem
                                 key={shop.id}
                                 value={shop.id.toString()}

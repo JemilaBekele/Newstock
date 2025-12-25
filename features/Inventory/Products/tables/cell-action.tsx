@@ -74,7 +74,7 @@ export const ProductCellAction: React.FC<ProductCellActionProps> = ({
               <IconEdit className='mr-2 h-4 w-4' /> Update
             </DropdownMenuItem>
           </PermissionGuard>
-          <PermissionGuard requiredPermission={PERMISSIONS.PRODUCT.UPDATE.name}>
+          <PermissionGuard requiredPermission={PERMISSIONS.PRODUCT.VIEW.name}>
             <DropdownMenuItem
               onClick={() =>
                 router.push(`/dashboard/Products/view?id=${data.id}`)
