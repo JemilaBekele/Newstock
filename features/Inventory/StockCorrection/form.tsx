@@ -586,324 +586,333 @@ export default function StockCorrectionForm({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name='items'
-              render={({ field, fieldState }) => (
-                <FormItem>
-                  <FormLabel>Items</FormLabel>
-                  {loadingProducts && <div></div>}
-                  <FormControl>
-                    <div className='space-y-4'>
-                      <div className='grid grid-cols-6 gap-4 text-sm font-semibold text-gray-700 dark:text-gray-300'>
-                        <div>Product</div>
-                        <div>Batch</div>
-                        <div>Unit</div>
-                        <div>Quantity</div>
-                        <div>Available</div>
-                        <div>Action</div>
-                      </div>
+           <FormField
+  control={form.control}
+  name='items'
+  render={({ field, fieldState }) => {
+    // Cast fieldState.error to the correct type
+    const itemsError = fieldState.error as any;
+    
+    return (
+      <FormItem>
+        <FormLabel>Items</FormLabel>
+        {loadingProducts && <div></div>}
+        <FormControl>
+          <div className='space-y-4'>
+            <div className='grid grid-cols-6 gap-4 text-sm font-semibold text-gray-700 dark:text-gray-300'>
+              <div>Product</div>
+              <div>Batch</div>
+              <div>Unit</div>
+              <div>Quantity</div>
+              <div>Available</div>
+              <div>Action</div>
+            </div>
 
-                      {field.value.map((item, index) => {
-                        const storeStockItem = storeStockItems.find(
+            {field.value.map((item, index) => {
+              const storeStockItem = storeStockItems.find(
+                (stock) =>
+                  stock.product.id.toString() === item.productId &&
+                  (!item.batchId || stock.batchId === item.batchId)
+              );
+
+              const availableInSelectedUnit =
+                storeStockItem && item.unitOfMeasureId
+                  ? calculateAvailableQuantity(
+                      storeStockItem,
+                      item.unitOfMeasureId
+                    )
+                  : storeStockItem?.quantity || 0;
+
+              const uniqueProducts = getUniqueProducts();
+              const productOptions =
+                isEdit && initialItemsLoaded
+                  ? [
+                      ...uniqueProducts.map((storeStockItem) => ({
+                        value: storeStockItem.product.id.toString(),
+                        label: `${storeStockItem.product.name}`,
+                        data: storeStockItem
+                      })),
+                      ...(item.productId &&
+                      !uniqueProducts.some(
+                        (stock) =>
+                          stock.product.id.toString() === item.productId
+                      )
+                        ? [
+                            {
+                              value: item.productId,
+                              label: `[Current] ${
+                                initialData?.items.find(
+                                  (i) => i.productId.toString() === item.productId
+                                )?.product?.name || item.productId
+                              }`,
+                              data: null
+                            }
+                          ]
+                        : [])
+                    ]
+                  : uniqueProducts.map((storeStockItem) => ({
+                      value: storeStockItem.product.id.toString(),
+                      label: `${storeStockItem.product.name}`,
+                      data: storeStockItem
+                    }));
+
+              // Get the error for this specific item
+              const itemError = itemsError?.[index];
+
+              return (
+                <div
+                  key={index}
+                  className='grid grid-cols-6 items-center gap-4'
+                >
+                  <div>
+                    <Select
+                      instanceId={`product-select-${index}`}
+                      options={productOptions}
+                      onChange={async (newValue) => {
+                        const newItems = [...field.value];
+                        newItems[index].productId =
+                          newValue?.value || '';
+                        newItems[index].batchId = '';
+                        newItems[index].unitOfMeasureId = '';
+                        newItems[index].quantity = 1;
+                        field.onChange(newItems);
+
+                        if (newValue?.value) {
+                          await fetchBatches(newValue.value);
+                          await fetchUnitsOfMeasure(newValue.value);
+                        }
+                      }}
+                      value={
+                        productOptions.find(
+                          (p) => p.value === item.productId
+                        ) || null
+                      }
+                      placeholder={
+                        loadingProducts
+                          ? 'Loading products...'
+                          : 'Search product'
+                      }
+                      isSearchable
+                      isDisabled={loadingProducts}
+                      styles={isDark ? darkStyles : {}}
+                    />
+                    {itemError?.productId && (
+                      <p className='text-sm font-medium text-destructive mt-1'>
+                        {itemError.productId.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Select
+                      key={`batch-${item.productId}-${batches[item.productId]?.length || 0}`}
+                      instanceId={`batch-select-${index}`}
+                      options={storeStockItems
+                        .filter(
                           (stock) =>
-                            stock.product.id.toString() === item.productId &&
-                            (!item.batchId || stock.batchId === item.batchId)
+                            stock.product.id.toString() ===
+                            item.productId
+                        )
+                        .map((stock) => ({
+                          value: stock.batchId.toString(),
+                          label: `${stock.batch?.batchNumber || 'N/A'}`
+                        }))}
+                      onChange={(newValue) => {
+                        const newItems = [...field.value];
+                        newItems[index].batchId =
+                          newValue?.value || '';
+                        const selectedStock = storeStockItems.find(
+                          (stock) =>
+                            stock.batchId === newValue?.value &&
+                            stock.product.id.toString() ===
+                              item.productId
                         );
+                        newItems[index].unitOfMeasureId =
+                          selectedStock?.unitOfMeasureId || '';
+                        field.onChange(newItems);
+                      }}
+                      value={
+                        storeStockItems
+                          .filter(
+                            (stock) =>
+                              stock.product.id.toString() ===
+                              item.productId
+                          )
+                          .map((stock) => ({
+                            value: stock.batchId.toString(),
+                            label: stock.batch?.batchNumber || 'N/A'
+                          }))
+                          .find((b) => b.value === item.batchId) ||
+                        null
+                      }
+                      placeholder={
+                        loadingBatches[item.productId]
+                          ? 'Loading...'
+                          : 'Select batch'
+                      }
+                      isSearchable
+                      isDisabled={
+                        !item.productId ||
+                        loadingBatches[item.productId]
+                      }
+                      isLoading={loadingBatches[item.productId]}
+                      styles={isDark ? darkStyles : {}}
+                    />
+                  </div>
 
-                        const availableInSelectedUnit =
-                          storeStockItem && item.unitOfMeasureId
-                            ? calculateAvailableQuantity(
-                                storeStockItem,
-                                item.unitOfMeasureId
-                              )
-                            : storeStockItem?.quantity || 0;
+                  <div>
+                    <Select
+                      instanceId={`unit-select-${index}`}
+                      options={
+                        unitsOfMeasure[item.productId]?.map(
+                          (unit) => ({
+                            value: unit.id.toString(),
+                            label: `${unit.name}`
+                          })
+                        ) || []
+                      }
+                      onChange={(newValue) => {
+                        const newItems = [...field.value];
+                        newItems[index].unitOfMeasureId =
+                          newValue?.value || '';
+                        field.onChange(newItems);
+                      }}
+                      value={
+                        // This handles the case where the unit exists in initial data but not yet in options
+                        unitsOfMeasure[item.productId]
+                          ?.map((u) => ({
+                            value: u.id.toString(),
+                            label: `${u.name} `
+                          }))
+                          .find(
+                            (u) => u.value === item.unitOfMeasureId
+                          ) ||
+                        // Fallback: create a temporary option for the initial value
+                        (item.unitOfMeasureId
+                          ? {
+                              value: item.unitOfMeasureId,
+                              label: 'Loading...'
+                            }
+                          : null)
+                      }
+                      placeholder='Search unit'
+                      isSearchable
+                      isDisabled={!item.productId}
+                      styles={isDark ? darkStyles : {}}
+                    />
+                    {itemError?.unitOfMeasureId && (
+                      <p className='text-sm font-medium text-destructive mt-1'>
+                        {itemError.unitOfMeasureId.message}
+                      </p>
+                    )}
+                  </div>
 
-                        const uniqueProducts = getUniqueProducts();
-                        const productOptions =
-                          isEdit && initialItemsLoaded
-                            ? [
-                                ...uniqueProducts.map((storeStockItem) => ({
-                                  value: storeStockItem.product.id.toString(),
-                                  label: `${storeStockItem.product.name}`,
-                                  data: storeStockItem
-                                })),
-                                ...(item.productId &&
-                                !uniqueProducts.some(
-                                  (stock) =>
-                                    stock.product.id.toString() ===
-                                    item.productId
-                                )
-                                  ? [
-                                      {
-                                        value: item.productId,
-                                        label: `[Current] ${initialData?.items.find((i) => i.productId.toString() === item.productId)?.product?.name || item.productId}`,
-                                        data: null
-                                      }
-                                    ]
-                                  : [])
-                              ]
-                            : uniqueProducts.map((storeStockItem) => ({
-                                value: storeStockItem.product.id.toString(),
-                                label: `${storeStockItem.product.name}`,
-                                data: storeStockItem
-                              }));
-
-                        const itemError = fieldState.error?.[index];
-
-                        return (
-                          <div
-                            key={index}
-                            className='grid grid-cols-6 items-center gap-4'
-                          >
-                            <div>
-                              <Select
-                                instanceId={`product-select-${index}`}
-                                options={productOptions}
-                                onChange={async (newValue) => {
-                                  const newItems = [...field.value];
-                                  newItems[index].productId =
-                                    newValue?.value || '';
-                                  newItems[index].batchId = '';
-                                  newItems[index].unitOfMeasureId = '';
-                                  newItems[index].quantity = 1;
-                                  field.onChange(newItems);
-
-                                  if (newValue?.value) {
-                                    await fetchBatches(newValue.value);
-                                    await fetchUnitsOfMeasure(newValue.value);
-                                  }
-                                }}
-                                value={
-                                  productOptions.find(
-                                    (p) => p.value === item.productId
-                                  ) || null
-                                }
-                                placeholder={
-                                  loadingProducts
-                                    ? 'Loading products...'
-                                    : 'Search product'
-                                }
-                                isSearchable
-                                isDisabled={loadingProducts}
-                                styles={isDark ? darkStyles : {}}
-                              />
-                              {itemError?.productId && (
-                                <p className='text-sm font-medium text-destructive mt-1'>
-                                  {itemError.productId.message}
-                                </p>
-                              )}
-                            </div>
-
-                            <div>
-                              <Select
-                                key={`batch-${item.productId}-${batches[item.productId]?.length || 0}`}
-                                instanceId={`batch-select-${index}`}
-                                options={storeStockItems
-                                  .filter(
-                                    (stock) =>
-                                      stock.product.id.toString() ===
-                                      item.productId
-                                  )
-                                  .map((stock) => ({
-                                    value: stock.batchId.toString(),
-                                    label: `${stock.batch?.batchNumber || 'N/A'}`
-                                  }))}
-                                onChange={(newValue) => {
-                                  const newItems = [...field.value];
-                                  newItems[index].batchId =
-                                    newValue?.value || '';
-                                  const selectedStock = storeStockItems.find(
-                                    (stock) =>
-                                      stock.batchId === newValue?.value &&
-                                      stock.product.id.toString() ===
-                                        item.productId
-                                  );
-                                  newItems[index].unitOfMeasureId =
-                                    selectedStock?.unitOfMeasureId || '';
-                                  field.onChange(newItems);
-                                }}
-                                value={
-                                  storeStockItems
-                                    .filter(
-                                      (stock) =>
-                                        stock.product.id.toString() ===
-                                        item.productId
-                                    )
-                                    .map((stock) => ({
-                                      value: stock.batchId.toString(),
-                                      label: stock.batch?.batchNumber || 'N/A'
-                                    }))
-                                    .find((b) => b.value === item.batchId) ||
-                                  null
-                                }
-                                placeholder={
-                                  loadingBatches[item.productId]
-                                    ? 'Loading...'
-                                    : 'Select batch'
-                                }
-                                isSearchable
-                                isDisabled={
-                                  !item.productId ||
-                                  loadingBatches[item.productId]
-                                }
-                                isLoading={loadingBatches[item.productId]}
-                                styles={isDark ? darkStyles : {}}
-                              />
-                            </div>
-
-                            <div>
-                              <Select
-                                instanceId={`unit-select-${index}`}
-                                options={
-                                  unitsOfMeasure[item.productId]?.map(
-                                    (unit) => ({
-                                      value: unit.id.toString(),
-                                      label: `${unit.name}`
-                                    })
-                                  ) || []
-                                }
-                                onChange={(newValue) => {
-                                  const newItems = [...field.value];
-                                  newItems[index].unitOfMeasureId =
-                                    newValue?.value || '';
-                                  field.onChange(newItems);
-                                }}
-                                value={
-                                  // This handles the case where the unit exists in initial data but not yet in options
-                                  unitsOfMeasure[item.productId]
-                                    ?.map((u) => ({
-                                      value: u.id.toString(),
-                                      label: `${u.name} `
-                                    }))
-                                    .find(
-                                      (u) => u.value === item.unitOfMeasureId
-                                    ) ||
-                                  // Fallback: create a temporary option for the initial value
-                                  (item.unitOfMeasureId
-                                    ? {
-                                        value: item.unitOfMeasureId,
-                                        label: 'Loading...'
-                                      }
-                                    : null)
-                                }
-                                placeholder='Search unit'
-                                isSearchable
-                                isDisabled={!item.productId}
-                                styles={isDark ? darkStyles : {}}
-                              />
-                              {itemError?.unitOfMeasureId && (
-                                <p className='text-sm font-medium text-destructive mt-1'>
-                                  {itemError.unitOfMeasureId.message}
-                                </p>
-                              )}
-                            </div>
-
-                            <div>
-                              <FormField
-                                control={form.control}
-                                name={`items.${index}.quantity`}
-                                render={({ field: quantityField, fieldState: quantityFieldState }) => (
-                                  <div>
-                                    <Input
-                                      type='text'
-                                      inputMode='decimal'
-                                      placeholder='Qty'
-                                      value={quantityField.value.toString()}
-                                      onChange={(e) => {
-                                        const value = e.target.value;
-                                        
-                                        // Allow numbers, decimal point, and minus sign
-                                        const validPattern = /^-?\d*\.?\d*$/;
-                                        
-                                        if (validPattern.test(value)) {
-                                          quantityField.onChange(value);
-                                        }
-                                      }}
-                                      onBlur={(e) => {
-                                        const value = e.target.value;
-                                        if (value === '' || value === '-' || value === '.') {
-                                          // Set to 0 if empty or invalid
-                                          quantityField.onChange('0');
-                                        } else if (value.endsWith('.')) {
-                                          // Remove trailing decimal point
-                                          quantityField.onChange(value.slice(0, -1));
-                                        }
-                                      }}
-                                    />
-                                    <div className='mt-1 text-xs text-gray-500'>
-                                      {(() => {
-                                        const numValue = parseFloat(quantityField.value.toString());
-                                        if (isNaN(numValue)) {
-                                          return 'Enter valid number';
-                                        }
-                                        return numValue < 0 ? 'Subtraction' : numValue > 0 ? 'Addition' : 'Zero adjustment';
-                                      })()}
-                                    </div>
-                                    {quantityFieldState.error && (
-                                      <p className='text-sm font-medium text-destructive mt-1'>
-                                        {quantityFieldState.error.message}
-                                      </p>
-                                    )}
-                                  </div>
-                                )}
-                              />
-                            </div>
-
-                            <div className='text-muted-foreground text-sm'>
-                              {availableInSelectedUnit > 0
-                                ? `${Math.floor(availableInSelectedUnit)} available`
-                                : 'Out of stock'}
-                            </div>
-
-                            <div>
-                              <Button
-                                type='button'
-                                variant='destructive'
-                                size='sm'
-                                onClick={() => {
-                                  const newItems = [...field.value];
-                                  newItems.splice(index, 1);
-                                  field.onChange(newItems);
-                                }}
-                                disabled={field.value.length <= 1}
-                              >
-                                <IconTrash size={16} />
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      <div className='flex justify-end'>
-                        <Button
-                          type='button'
-                          onClick={() => {
-                            field.onChange([
-                              ...field.value,
-                              {
-                                productId: '',
-                                batchId: '',
-                                unitOfMeasureId: '',
-                                quantity: 1
+                  <div>
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.quantity`}
+                      render={({ field: quantityField, fieldState: quantityFieldState }) => (
+                        <div>
+                          <Input
+                            type='text'
+                            inputMode='decimal'
+                            placeholder='Qty'
+                            value={quantityField.value.toString()}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              
+                              // Allow numbers, decimal point, and minus sign
+                              const validPattern = /^-?\d*\.?\d*$/;
+                              
+                              if (validPattern.test(value)) {
+                                quantityField.onChange(value);
                               }
-                            ]);
-                          }}
-                          disabled={loadingProducts}
-                        >
-                          Add Item
-                        </Button>
-                      </div>
-                    </div>
-                  </FormControl>
-                  {fieldState.error && typeof fieldState.error === 'object' && 'message' in fieldState.error && (
-                    <p className='text-sm font-medium text-destructive'>
-                      {fieldState.error.message as string}
-                    </p>
-                  )}
-                </FormItem>
-              )}
-            />
+                            }}
+                            onBlur={(e) => {
+                              const value = e.target.value;
+                              if (value === '' || value === '-' || value === '.') {
+                                // Set to 0 if empty or invalid
+                                quantityField.onChange('0');
+                              } else if (value.endsWith('.')) {
+                                // Remove trailing decimal point
+                                quantityField.onChange(value.slice(0, -1));
+                              }
+                            }}
+                          />
+                          <div className='mt-1 text-xs text-gray-500'>
+                            {(() => {
+                              const numValue = parseFloat(quantityField.value.toString());
+                              if (isNaN(numValue)) {
+                                return 'Enter valid number';
+                              }
+                              return numValue < 0 ? 'Subtraction' : numValue > 0 ? 'Addition' : 'Zero adjustment';
+                            })()}
+                          </div>
+                          {quantityFieldState.error && (
+                            <p className='text-sm font-medium text-destructive mt-1'>
+                              {quantityFieldState.error.message}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    />
+                  </div>
+
+                  <div className='text-muted-foreground text-sm'>
+                    {availableInSelectedUnit > 0
+                      ? `${Math.floor(availableInSelectedUnit)} available`
+                      : 'Out of stock'}
+                  </div>
+
+                  <div>
+                    <Button
+                      type='button'
+                      variant='destructive'
+                      size='sm'
+                      onClick={() => {
+                        const newItems = [...field.value];
+                        newItems.splice(index, 1);
+                        field.onChange(newItems);
+                      }}
+                      disabled={field.value.length <= 1}
+                    >
+                      <IconTrash size={16} />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+
+            <div className='flex justify-end'>
+              <Button
+                type='button'
+                onClick={() => {
+                  field.onChange([
+                    ...field.value,
+                    {
+                      productId: '',
+                      batchId: '',
+                      unitOfMeasureId: '',
+                      quantity: 1
+                    }
+                  ]);
+                }}
+                disabled={loadingProducts}
+              >
+                Add Item
+              </Button>
+            </div>
+          </div>
+        </FormControl>
+        {fieldState.error && typeof fieldState.error === 'object' && 'message' in fieldState.error && (
+          <p className='text-sm font-medium text-destructive'>
+            {fieldState.error.message as string}
+          </p>
+        )}
+      </FormItem>
+    );
+  }}
+/>
 
             <FormField
               control={form.control}
