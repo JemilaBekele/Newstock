@@ -44,8 +44,8 @@ interface FormData {
   items: Array<{
     productId: string;
     batchId: string;
-    unitOfMeasureId: string;
     quantity: number;
+    // Removed: unitOfMeasureId: string;
   }>;
 }
 
@@ -125,9 +125,9 @@ export default function TransferForm({
       items: initialData?.items?.map((item) => ({
         productId: item.productId.toString(),
         batchId: item.batchId.toString(),
-        unitOfMeasureId: item.unitOfMeasureId.toString(),
         quantity: Number(item.quantity)
-      })) || [{ productId: '', batchId: '', unitOfMeasureId: '', quantity: 1 }]
+        // Removed: unitOfMeasureId: item.unitOfMeasureId.toString(),
+      })) || [{ productId: '', batchId: '', quantity: 1 }] // Removed unitOfMeasureId
     }
   });
 
@@ -161,14 +161,10 @@ export default function TransferForm({
       }));
   };
 
-  // Get all unit of measures for a specific product
-  // Since backend returns product with unitOfMeasure, we'll use that
-  const getUnitsOfMeasureForProduct = (productId: string): IUnitOfMeasure[] => {
+  // Get unit of measure for a specific product
+  const getUnitOfMeasureForProduct = (productId: string): IUnitOfMeasure | null => {
     const productItem = storeStockItems.find(item => item.product.id === productId);
-    if (!productItem) return [];
-    
-    // Return the product's unit of measure as an array
-    return productItem.product.unitOfMeasure ? [productItem.product.unitOfMeasure] : [];
+    return productItem?.product.unitOfMeasure || null;
   };
 
   useEffect(() => {
@@ -230,9 +226,6 @@ export default function TransferForm({
       const storeStockData = await getAvailableProductsBySource(sourceType, sourceId);
       setStoreStockItems(storeStockData);
 
-      // No need to fetch batches or units of measure separately anymore!
-      // All data is already included in the response
-
       // For edit mode, pre-select items
       if (isEdit) {
         const items = form.getValues('items');
@@ -247,15 +240,10 @@ export default function TransferForm({
   }, [currentSource, sourceType, sourceStoreId, sourceShopId, form, isEdit]);
 
   const calculateAvailableQuantity = (
-    storeStockItem: any,
-    selectedUnitOfMeasureId: string
+    storeStockItem: any
   ): number => {
-    if (!storeStockItem || !selectedUnitOfMeasureId) return 0;
-
-    const baseQuantity = storeStockItem.quantity;
-
-    // Simplified: Return base quantity without conversion
-    return baseQuantity;
+    if (!storeStockItem) return 0;
+    return storeStockItem.quantity;
   };
 
   // Debounced fetch effect
@@ -315,43 +303,130 @@ export default function TransferForm({
     })
   };
 
-  const onSubmit = async (data: FormData) => {
-    setIsLoading(true);
-    try {
-      const payload = {
-        ...data,
-        items: data.items.map((item) => ({
-          ...item,
-          quantity: Number(item.quantity)
-        }))
-      };
+ const onSubmit = async (data: FormData) => {
+  setIsLoading(true);
+  try {
+    // Debug: Log the raw data
+    console.log('Raw form data:', data);
+    console.log('Raw items:', data.items);
+    console.log('Items count:', data.items.length);
 
-      let transferId: string | undefined;
-
-      if (isEdit && initialData?.id) {
-        const updatedTransfer = await updateTransfer(initialData.id, payload);
-        transferId = updatedTransfer.id;
-        toast.success('Transfer updated successfully');
-        router.push(`/dashboard/Transfer/view?id=${initialData?.id}`);
-      } else {
-        const newTransfer = await createTransfer(payload);
-        transferId = newTransfer.transfer.id;
-        toast.success('Transfer created successfully');
-      }
-
-      if (transferId) {
-        router.push(`/dashboard/Transfer/view?id=${transferId}`);
-      }
-      router.refresh();
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.message ||
-        'An error occurred while saving transfer.';
-      toast.error(message);
-    } finally {
+    // Validate source
+    if (data.sourceType === TransferEntityType.STORE && !data.sourceStoreId) {
+      toast.error('Source store is required');
       setIsLoading(false);
+      return;
     }
-  };
+
+    if (data.sourceType === TransferEntityType.SHOP && !data.sourceShopId) {
+      toast.error('Source shop is required');
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate destination
+    if (data.destinationType === TransferEntityType.STORE && !data.destStoreId) {
+      toast.error('Destination store is required');
+      setIsLoading(false);
+      return;
+    }
+
+    if (data.destinationType === TransferEntityType.SHOP && !data.destShopId) {
+      toast.error('Destination shop is required');
+      setIsLoading(false);
+      return;
+    }
+
+    // Check if source and destination are the same
+    if (
+      (data.sourceType === TransferEntityType.STORE && 
+       data.destinationType === TransferEntityType.STORE && 
+       data.sourceStoreId === data.destStoreId) ||
+      (data.sourceType === TransferEntityType.SHOP && 
+       data.destinationType === TransferEntityType.SHOP && 
+       data.sourceShopId === data.destShopId)
+    ) {
+      toast.error('Source and destination cannot be the same');
+      setIsLoading(false);
+      return;
+    }
+
+    // Debug each item
+    data.items.forEach((item, index) => {
+      console.log(`Item ${index + 1}:`, {
+        productId: item.productId,
+        batchId: item.batchId,
+        quantity: item.quantity,
+        productIdTruthy: !!item.productId,
+        batchIdTruthy: !!item.batchId,
+        quantityValid: item.quantity > 0,
+        passesAll: item.productId && item.batchId && item.quantity > 0
+      });
+    });
+
+    // Filter out incomplete items (removed unitOfMeasureId check)
+    const validItems = data.items.filter(
+      (item) => 
+        item.productId && 
+        item.batchId && 
+        item.quantity > 0
+    );
+    
+    console.log('Valid items found:', validItems);
+    console.log('Valid items count:', validItems.length);
+
+    // If no valid items, show error
+    if (validItems.length === 0) {
+      toast.error('Please add at least one valid item');
+      setIsLoading(false);
+      return;
+    }
+
+    // Clean the payload
+    const cleanedPayload = {
+      ...data,
+      reference: data.reference?.trim() || undefined,
+      notes: data.notes?.trim() || undefined,
+      sourceStoreId: data.sourceStoreId || undefined,
+      sourceShopId: data.sourceShopId || undefined,
+      destStoreId: data.destStoreId || undefined,
+      destShopId: data.destShopId || undefined,
+      items: validItems.map((item) => ({
+        productId: item.productId.toString(),
+        batchId: item.batchId.toString(),
+        quantity: Number(item.quantity)
+        // Removed: unitOfMeasureId: item.unitOfMeasureId.toString(),
+      }))
+    };
+
+    console.log('Cleaned payload:', cleanedPayload);
+    
+    let transferId: string | undefined;
+
+    if (isEdit && initialData?.id) {
+      const updatedTransfer = await updateTransfer(initialData.id, cleanedPayload);
+      transferId = updatedTransfer.id;
+      toast.success('Transfer updated successfully');
+      router.push(`/dashboard/Transfer/view?id=${initialData?.id}`);
+    } else {
+      const newTransfer = await createTransfer(cleanedPayload);
+      transferId = newTransfer.transfer.id;
+      toast.success('Transfer created successfully');
+    }
+
+    if (transferId) {
+      router.push(`/dashboard/Transfer/view?id=${transferId}`);
+    }
+    router.refresh();
+  } catch (error: any) {
+    const message =
+      error?.response?.data?.message ||
+      'An error occurred while saving transfer.';
+    toast.error(message);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   if (!isMounted) {
     return (
@@ -451,7 +526,6 @@ export default function TransferForm({
                             {
                               productId: '',
                               batchId: '',
-                              unitOfMeasureId: '',
                               quantity: 1
                             }
                           ]);
@@ -492,7 +566,6 @@ export default function TransferForm({
                               {
                                 productId: '',
                                 batchId: '',
-                                unitOfMeasureId: '',
                                 quantity: 1
                               }
                             ]);
@@ -536,7 +609,6 @@ export default function TransferForm({
                               {
                                 productId: '',
                                 batchId: '',
-                                unitOfMeasureId: '',
                                 quantity: 1
                               }
                             ]);
@@ -680,15 +752,15 @@ export default function TransferForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Items</FormLabel>
-                  {loadingProducts && <div></div>}
                   <FormControl>
                     <div className='space-y-4'>
-                      <div className='grid grid-cols-7 gap-4 text-sm font-semibold text-gray-700 dark:text-gray-300'>
+                      {/* Updated grid columns: removed "Unit" column */}
+                      <div className='grid grid-cols-6 gap-4 text-sm font-semibold text-gray-700 dark:text-gray-300'>
                         <div>Product</div>
                         <div>Batch</div>
-                        <div>Unit</div>
                         <div>Quantity</div>
                         <div>Available</div>
+                        <div>Unit</div>
                         <div>Action</div>
                       </div>
 
@@ -699,13 +771,10 @@ export default function TransferForm({
                             stock.batchId === item.batchId
                         );
 
-                        const availableInSelectedUnit =
-                          storeStockItem && item.unitOfMeasureId
-                            ? calculateAvailableQuantity(
-                                storeStockItem,
-                                item.unitOfMeasureId
-                              )
-                            : storeStockItem?.quantity || 0;
+                        const availableQuantity = storeStockItem?.quantity || 0;
+                        
+                        // Get unit of measure from the product
+                        const productUnitOfMeasure = storeStockItem?.product.unitOfMeasure;
 
                         const uniqueProducts = getUniqueProducts();
                         const productOptions = uniqueProducts.map((storeStockItem) => ({
@@ -717,7 +786,7 @@ export default function TransferForm({
                         return (
                           <div
                             key={index}
-                            className='grid grid-cols-7 items-center gap-4'
+                            className='grid grid-cols-6 items-center gap-4'
                           >
                             <div>
                               <Select
@@ -728,7 +797,6 @@ export default function TransferForm({
                                   newItems[index].productId =
                                     newValue?.value || '';
                                   newItems[index].batchId = '';
-                                  newItems[index].unitOfMeasureId = '';
                                   newItems[index].quantity = 1;
                                   field.onChange(newItems);
                                 }}
@@ -737,9 +805,7 @@ export default function TransferForm({
                                     (p) => p.value === item.productId
                                   ) || null
                                 }
-                                placeholder={
-                                 'Search product'
-                                }
+                                placeholder={'Search product'}
                                 isSearchable
                                 isDisabled={loadingProducts}
                                 isLoading={loadingProducts}
@@ -759,15 +825,6 @@ export default function TransferForm({
                                   const newItems = [...field.value];
                                   newItems[index].batchId =
                                     newValue?.value || '';
-                                  
-                                  // Auto-select the unit of measure from the stock item
-                                  const selectedStock = storeStockItems.find(
-                                    (stock) =>
-                                      stock.batchId === newValue?.value &&
-                                      stock.product.id.toString() === item.productId
-                                  );
-                                  newItems[index].unitOfMeasureId =
-                                    selectedStock?.unitOfMeasureId || '';
                                   
                                   field.onChange(newItems);
                                 }}
@@ -796,62 +853,16 @@ export default function TransferForm({
                             </div>
 
                             <div>
-                              <Select
-                                instanceId={`unit-select-${index}`}
-                                options={getUnitsOfMeasureForProduct(item.productId).map(
-                                  (unit) => ({
-                                    value: unit.id.toString(),
-                                    label: `${unit.name} `
-                                  })
-                                )}
-                                onChange={(newValue: any) => {
-                                  const newItems = [...field.value];
-                                  newItems[index].unitOfMeasureId =
-                                    newValue?.value || '';
-                                  field.onChange(newItems);
-                                }}
-                                value={
-                                  getUnitsOfMeasureForProduct(item.productId)
-                                    .map((u) => ({
-                                      value: u.id.toString(),
-                                      label: `${u.name} `
-                                    }))
-                                    .find((u) => u.value === item.unitOfMeasureId) ||
-                                  (getUnitsOfMeasureForProduct(item.productId)[0]
-                                    ? {
-                                        value:
-                                          getUnitsOfMeasureForProduct(item.productId)[0].id.toString(),
-                                        label: `${getUnitsOfMeasureForProduct(item.productId)[0].name} (${getUnitsOfMeasureForProduct(item.productId)[0]})`
-                                      }
-                                    : null)
-                                }
-                                placeholder={
-                                  !item.productId || loadingProducts
-                                    ? 'Select product first'
-                                    : 'Select unit'
-                                }
-                                isSearchable
-                                isDisabled={
-                                  !item.productId || loadingProducts
-                                }
-                                isLoading={loadingProducts}
-                                styles={isDark ? darkStyles : {}}
-                              />
-                            </div>
-
-                            <div>
                               <Input
                                 type='number'
                                 placeholder='Qty'
                                 value={item.quantity}
                                 min={1}
-                                max={Math.floor(availableInSelectedUnit)}
+                                max={Math.floor(availableQuantity)}
                                 onChange={(e) => {
                                   const newItems = [...field.value];
                                   const quantity = Number(e.target.value);
-                                  const maxQuantity = Math.floor(
-                                    availableInSelectedUnit
-                                  );
+                                  const maxQuantity = Math.floor(availableQuantity);
 
                                   newItems[index].quantity = Math.min(
                                     isNaN(quantity) ? 0 : quantity,
@@ -869,10 +880,19 @@ export default function TransferForm({
                                   <div className='h-3 w-3 animate-spin rounded-full border-b-2 border-gray-400'></div>
                                   <span>Loading...</span>
                                 </div>
-                              ) : availableInSelectedUnit > 0 ? (
-                                `${Math.floor(availableInSelectedUnit)} available`
+                              ) : availableQuantity > 0 ? (
+                                `${Math.floor(availableQuantity)} available`
                               ) : (
                                 'Out of stock'
+                              )}
+                            </div>
+
+                            {/* Display unit of measure from product (read-only) */}
+                            <div className='text-muted-foreground text-sm'>
+                              {productUnitOfMeasure ? (
+                                productUnitOfMeasure.name
+                              ) : (
+                                <span className='text-gray-400'>Select product</span>
                               )}
                             </div>
 
@@ -906,7 +926,6 @@ export default function TransferForm({
                               {
                                 productId: '',
                                 batchId: '',
-                                unitOfMeasureId: '',
                                 quantity: 1
                               }
                             ]);
@@ -947,7 +966,7 @@ export default function TransferForm({
             <div className='flex justify-end gap-2'>
               <Button
                 type='submit'
-                disabled={isLoading }
+                disabled={isLoading}
                 className='min-w-24'
               >
                 {isLoading ? (
