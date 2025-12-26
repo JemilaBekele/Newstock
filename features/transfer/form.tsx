@@ -25,15 +25,10 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { IProductBatch } from '@/models/Product';
 import { getStores, getStoresall } from '@/service/store';
 import { getShops, getShopsall } from '@/service/shop';
-import {
-  getProductBatches,
-  getUnitOfMeasuresByProductId
-} from '@/service/Product';
 import { createTransfer, updateTransfer } from '@/service/transfer';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { IconTrash } from '@tabler/icons-react';
 import { ITransfer, TransferEntityType } from '@/models/transfer';
 import { getAvailableProductsBySource } from '@/service/productBatchService';
@@ -66,6 +61,44 @@ interface TransferFormProps {
   isEdit?: boolean;
 }
 
+interface StoreStockItem {
+  id: string;
+  storeId: string;
+  batchId: string;
+  quantity: number;
+  status: string;
+  unitOfMeasureId: string;
+  createdAt: string;
+  updatedAt: string;
+  store: {
+    id: string;
+    name: string;
+    branchId: string;
+  };
+  batch: {
+    id: string;
+    batchNumber: string;
+    expiryDate: string | null;
+    price: number | null;
+  };
+  product: {
+    id: string;
+    productCode: string;
+    name: string;
+    generic: string | null;
+    description: string | null;
+    sellPrice: number | null;
+    imageUrl: string;
+    isActive: boolean;
+    category: any;
+    subCategory: any | null;
+    unitOfMeasure: IUnitOfMeasure;
+  };
+  unitOfMeasure: IUnitOfMeasure;
+  availableQuantity: number;
+  conversionFactor: number;
+}
+
 export default function TransferForm({
   initialData,
   isEdit = false
@@ -73,23 +106,17 @@ export default function TransferForm({
   const [isLoading, setIsLoading] = useState(false);
   const [stores, setStores] = useState<any[]>([]);
   const [shops, setShops] = useState<any[]>([]);
-   const [disstores, setDisstores] = useState<any[]>([]);
+  const [disstores, setDisstores] = useState<any[]>([]);
   const [disshops, setDisshops] = useState<any[]>([]);
-  const [storeStockItems, setStoreStockItems] = useState<any[]>([]);
-  const [batches, setBatches] = useState<{ [key: string]: IProductBatch[] }>(
-    {}
-  );
-  const [unitsOfMeasure, setUnitsOfMeasure] = useState<{
-    [key: string]: IUnitOfMeasure[];
-  }>({});
+  const [storeStockItems, setStoreStockItems] = useState<StoreStockItem[]>([]);
   const [isMounted, setIsMounted] = useState(false);
-  const [loadingBatches, setLoadingBatches] = useState<{
-    [key: string]: boolean;
-  }>({});
-  const [loadingUOM, setLoadingUOM] = useState<{ [key: string]: boolean }>({});
   const [loadingProducts, setLoadingProducts] = useState(false);
-  const [initialItemsLoaded, setInitialItemsLoaded] = useState(false);
-  const [loadingStoresShops, setLoadingStoresShops] = useState(true); // Add loading for stores/shops
+  const [loadingStoresShops, setLoadingStoresShops] = useState(true);
+  
+  // Add refs to track API calls
+  const hasFetchedProductsRef = useRef(false);
+  const lastSourceRef = useRef<string>('');
+  
   const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -117,31 +144,13 @@ export default function TransferForm({
   const sourceShopId = form.watch('sourceShopId');
   const destinationType = form.watch('destinationType');
 
-  // Helper function to calculate available quantity in selected unit
-  const calculateAvailableQuantity = (
-    storeStockItem: any,
-    selectedUnitOfMeasureId: string
-  ) => {
-    if (!storeStockItem || !selectedUnitOfMeasureId) return 0;
+  // Create a stable source identifier
+  const currentSource = `${sourceType}-${sourceType === TransferEntityType.STORE ? sourceStoreId : sourceShopId}`;
 
-    const baseQuantity = storeStockItem.quantity;
+ 
 
-    // Get the base conversion factor from the stock item's unit of measure
-    const baseConversion = storeStockItem.unitOfMeasure?.conversionFactor || 1;
-
-    // Find the selected unit of measure
-    const selectedUnit = unitsOfMeasure[storeStockItem.product.id]?.find(
-      (unit: IUnitOfMeasure) => unit.id === selectedUnitOfMeasureId
-    );
-
-    if (!selectedUnit) return baseQuantity;
-
-    // Convert quantity to selected unit
-    return baseQuantity * baseConversion;
-  };
-
-  // Helper function to get unique products from storeStockItems
-  const getUniqueProducts = () => {
+  // Get unique products from storeStockItems
+  const getUniqueProducts = (): StoreStockItem[] => {
     const seenProductIds = new Set<string>();
     return storeStockItems.filter((item) => {
       if (!seenProductIds.has(item.product.id)) {
@@ -152,13 +161,34 @@ export default function TransferForm({
     });
   };
 
+  // Get all batches for a specific product from storeStockItems
+  const getBatchesForProduct = (productId: string): Array<{ id: string; batchNumber: string }> => {
+    return storeStockItems
+      .filter((item) => item.product.id === productId)
+      .map((item) => ({
+        id: item.batchId,
+        batchNumber: item.batch.batchNumber
+      }));
+  };
+
+  // Get all unit of measures for a specific product
+  // Since backend returns product with unitOfMeasure, we'll use that
+  const getUnitsOfMeasureForProduct = (productId: string): IUnitOfMeasure[] => {
+    const productItem = storeStockItems.find(item => item.product.id === productId);
+    if (!productItem) return [];
+    
+    // Return the product's unit of measure as an array
+    return productItem.product.unitOfMeasure ? [productItem.product.unitOfMeasure] : [];
+  };
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
+  // Fetch stores and shops
   useEffect(() => {
     const fetchData = async () => {
-      setLoadingStoresShops(true); // Start loading
+      setLoadingStoresShops(true);
       try {
         const [storesData, shopsData, disstoresData, disshopsData] = await Promise.all([
           getStores(),
@@ -169,123 +199,85 @@ export default function TransferForm({
         setStores(storesData);
         setShops(shopsData);
         setDisshops(disstoresData);
-                setDisstores(disshopsData);
-
-
+        setDisstores(disshopsData);
       } catch  {
         toast.error('Failed to load stores or shops');
       } finally {
-        setLoadingStoresShops(false); // End loading
+        setLoadingStoresShops(false);
       }
     };
     fetchData();
   }, []);
 
-  const fetchUnitsOfMeasure = useCallback(
-    async (productId: string) => {
-      if (!productId) return;
+  // Optimized: Fetch products from source
+  const fetchProductsFromSource = useCallback(async () => {
+    // Don't fetch if no source is selected
+    if (
+      (sourceType === TransferEntityType.STORE && !sourceStoreId) ||
+      (sourceType === TransferEntityType.SHOP && !sourceShopId)
+    ) {
+      setStoreStockItems([]);
+      hasFetchedProductsRef.current = false;
+      lastSourceRef.current = '';
+      return;
+    }
 
-      if (!unitsOfMeasure[productId] && !loadingUOM[productId]) {
-        setLoadingUOM((prev) => ({ ...prev, [productId]: true }));
-        try {
-          const uomData = await getUnitOfMeasuresByProductId(productId);
+    // Skip if we've already fetched for this source
+    if (currentSource === lastSourceRef.current && hasFetchedProductsRef.current) {
+      return;
+    }
 
-          if (Array.isArray(uomData)) {
-            setUnitsOfMeasure((prev) => ({ ...prev, [productId]: uomData }));
-          } else {
-            setUnitsOfMeasure((prev) => ({
-              ...prev,
-              [productId]: uomData ? [uomData] : []
-            }));
-          }
-        } catch  {
-          toast.error('Failed to load units of measure');
-          setUnitsOfMeasure((prev) => ({ ...prev, [productId]: [] }));
-        } finally {
-          setLoadingUOM((prev) => ({ ...prev, [productId]: false }));
-        }
+    console.log(`Fetching products for source: ${currentSource}`);
+    
+    setLoadingProducts(true);
+    hasFetchedProductsRef.current = true;
+    lastSourceRef.current = currentSource;
+
+    try {
+      const sourceId = sourceType === TransferEntityType.STORE ? sourceStoreId : sourceShopId;
+      if (!sourceId) return;
+
+      const storeStockData = await getAvailableProductsBySource(sourceType, sourceId);
+      setStoreStockItems(storeStockData);
+
+      // No need to fetch batches or units of measure separately anymore!
+      // All data is already included in the response
+
+      // For edit mode, pre-select items
+      if (isEdit) {
+        const items = form.getValues('items');
+        // No additional API calls needed
       }
-    },
-    [unitsOfMeasure, loadingUOM]
-  );
+    } catch {
+      toast.error('Failed to load products from source');
+      setStoreStockItems([]);
+    } finally {
+      setLoadingProducts(false);
+    }
+  }, [currentSource, sourceType, sourceStoreId, sourceShopId, form, isEdit]);
+  const calculateAvailableQuantity = (
+    storeStockItem: any,
+    selectedUnitOfMeasureId: string
+  ): number => {
+    if (!storeStockItem || !selectedUnitOfMeasureId) return 0;
 
-  const fetchBatches = useCallback(
-    async (productId: string) => {
-      if (!batches[productId]) {
-        setLoadingBatches((prev) => ({ ...prev, [productId]: true }));
-        try {
-          const batchData = await getProductBatches(productId);
-          setBatches((prev) => ({ ...prev, [productId]: batchData }));
-        } catch  {
-          toast.error('Failed to load batches');
-        } finally {
-          setLoadingBatches((prev) => ({ ...prev, [productId]: false }));
-        }
-      }
-    },
-    [batches]
-  );
+    const baseQuantity = storeStockItem.quantity;
 
+
+   
+    // Convert quantity to selected unit
+    return baseQuantity ;
+  };
+  // Debounced fetch effect
   useEffect(() => {
-    const fetchProductsFromSource = async () => {
-      if (
-        (sourceType === TransferEntityType.STORE && !sourceStoreId) ||
-        (sourceType === TransferEntityType.SHOP && !sourceShopId)
-      ) {
-        setStoreStockItems([]);
-        return;
-      }
+    const timeoutId = setTimeout(() => {
+      fetchProductsFromSource();
+    }, 300); // 300ms debounce
 
-      setLoadingProducts(true);
-      try {
-        const sourceId =
-          sourceType === TransferEntityType.STORE
-            ? sourceStoreId
-            : sourceShopId;
-        if (!sourceId) return;
-
-        const storeStockData = await getAvailableProductsBySource(
-          sourceType,
-          sourceId
-        );
-        setStoreStockItems(storeStockData);
-
-        const productIds = Array.from(
-          new Set(storeStockData.map((item: any) => item.product.id))
-        );
-        for (const productId of productIds as string[]) {
-          await fetchUnitsOfMeasure(productId);
-        }
-
-        if (isEdit && !initialItemsLoaded) {
-          const items = form.getValues('items');
-          for (const item of items) {
-            if (item.productId) {
-              await fetchBatches(item.productId);
-              await fetchUnitsOfMeasure(item.productId);
-            }
-          }
-          setInitialItemsLoaded(true);
-        }
-      } catch {
-        toast.error('Failed to load products from source');
-        setStoreStockItems([]);
-      } finally {
-        setLoadingProducts(false);
-      }
+    return () => {
+      clearTimeout(timeoutId);
     };
-
-    fetchProductsFromSource();
-  }, [
-    sourceType,
-    sourceStoreId,
-    sourceShopId,
-    form,
-    isEdit,
-    initialItemsLoaded,
-    fetchUnitsOfMeasure,
-    fetchBatches
-  ]);
+  }, [fetchProductsFromSource]);
 
   const [isDark, setIsDark] = useState(false);
 
@@ -474,8 +466,6 @@ export default function TransferForm({
                             }
                           ]);
                           setStoreStockItems([]);
-                          setBatches({});
-                          setUnitsOfMeasure({});
                         }}
                       >
                         <FormControl>
@@ -517,8 +507,6 @@ export default function TransferForm({
                               }
                             ]);
                             setStoreStockItems([]);
-                            setBatches({});
-                            setUnitsOfMeasure({});
                           }}
                         >
                           <FormControl>
@@ -563,8 +551,6 @@ export default function TransferForm({
                               }
                             ]);
                             setStoreStockItems([]);
-                            setBatches({});
-                            setUnitsOfMeasure({});
                           }}
                         >
                           <FormControl>
@@ -732,35 +718,13 @@ export default function TransferForm({
                             : storeStockItem?.quantity || 0;
 
                         const uniqueProducts = getUniqueProducts();
-                        const productOptions =
-                          isEdit && initialItemsLoaded
-                            ? [
-                                ...uniqueProducts.map((storeStockItem) => ({
-                                  value: storeStockItem.product.id.toString(),
-                                  label: `${storeStockItem.product.name}`,
-                                  data: storeStockItem
-                                })),
-                                ...(item.productId &&
-                                !uniqueProducts.some(
-                                  (stock) =>
-                                    stock.product.id.toString() ===
-                                    item.productId
-                                )
-                                  ? [
-                                      {
-                                        value: item.productId,
-                                        label: `[Current] ${initialData?.items.find((i) => i.productId.toString() === item.productId)?.product?.name || item.productId}`,
-                                        data: null
-                                      }
-                                    ]
-                                  : [])
-                              ]
-                            : uniqueProducts.map((storeStockItem) => ({
-                                value: storeStockItem.product.id.toString(),
-                                label: `${storeStockItem.product.name}`,
-                                data: storeStockItem
-                              }));
+                        const productOptions = uniqueProducts.map((storeStockItem) => ({
+                          value: storeStockItem.product.id.toString(),
+                          label: `${storeStockItem.product.name}`,
+                          data: storeStockItem
+                        }));
 
+                     
                         return (
                           <div
                             key={index}
@@ -770,7 +734,7 @@ export default function TransferForm({
                               <Select
                                 instanceId={`product-select-${index}`}
                                 options={productOptions}
-                                onChange={async (newValue) => {
+                                onChange={(newValue: any) => {
                                   const newItems = [...field.value];
                                   newItems[index].productId =
                                     newValue?.value || '';
@@ -778,11 +742,6 @@ export default function TransferForm({
                                   newItems[index].unitOfMeasureId = '';
                                   newItems[index].quantity = 1;
                                   field.onChange(newItems);
-
-                                  if (newValue?.value) {
-                                    await fetchBatches(newValue.value);
-                                    await fetchUnitsOfMeasure(newValue.value);
-                                  }
                                 }}
                                 value={
                                   productOptions.find(
@@ -803,58 +762,48 @@ export default function TransferForm({
 
                             <div>
                               <Select
-                                key={`batch-${item.productId}-${batches[item.productId]?.length || 0}`}
+                                key={`batch-${item.productId}`}
                                 instanceId={`batch-select-${index}`}
-                                options={storeStockItems
-                                  .filter(
-                                    (stock) =>
-                                      stock.product.id.toString() ===
-                                      item.productId
-                                  )
-                                  .map((stock) => ({
-                                    value: stock.batchId.toString(),
-                                    label: `${stock.batch.batchNumber}`
-                                  }))}
-                                onChange={(newValue) => {
+                                options={getBatchesForProduct(item.productId).map((batch) => ({
+                                  value: batch.id,
+                                  label: batch.batchNumber
+                                }))}
+                                onChange={(newValue: any) => {
                                   const newItems = [...field.value];
                                   newItems[index].batchId =
                                     newValue?.value || '';
+                                  
+                                  // Auto-select the unit of measure from the stock item
                                   const selectedStock = storeStockItems.find(
                                     (stock) =>
                                       stock.batchId === newValue?.value &&
-                                      stock.product.id.toString() ===
-                                        item.productId
+                                      stock.product.id.toString() === item.productId
                                   );
                                   newItems[index].unitOfMeasureId =
                                     selectedStock?.unitOfMeasureId || '';
+                                  
                                   field.onChange(newItems);
                                 }}
                                 value={
-                                  storeStockItems
-                                    .filter(
-                                      (stock) =>
-                                        stock.product.id.toString() ===
-                                        item.productId
-                                    )
-                                    .map((stock) => ({
-                                      value: stock.batchId.toString(),
-                                      label: stock.batch.batchNumber
-                                    }))
-                                    .find((b) => b.value === item.batchId) ||
-                                  null
+                                  getBatchesForProduct(item.productId)
+                                    .find((b) => b.id === item.batchId) 
+                                    ? {
+                                        value: item.batchId,
+                                        label: getBatchesForProduct(item.productId)
+                                          .find((b) => b.id === item.batchId)?.batchNumber || ''
+                                      }
+                                    : null
                                 }
                                 placeholder={
-                                  loadingBatches[item.productId]
-                                    ? 'Loading...'
+                                  !item.productId || loadingProducts
+                                    ? 'Select product first'
                                     : 'Select batch'
                                 }
                                 isSearchable
                                 isDisabled={
-                                  !item.productId ||
-                                  loadingBatches[item.productId] ||
-                                  loadingProducts
+                                  !item.productId || loadingProducts
                                 }
-                                isLoading={loadingBatches[item.productId]}
+                                isLoading={loadingProducts}
                                 styles={isDark ? darkStyles : {}}
                               />
                             </div>
@@ -862,51 +811,43 @@ export default function TransferForm({
                             <div>
                               <Select
                                 instanceId={`unit-select-${index}`}
-                                options={
-                                  unitsOfMeasure[item.productId]?.map(
-                                    (unit) => ({
-                                      value: unit.id.toString(),
-                                      label: `${unit.name}`
-                                    })
-                                  ) || []
-                                }
-                                onChange={(newValue) => {
+                                options={getUnitsOfMeasureForProduct(item.productId).map(
+                                  (unit) => ({
+                                    value: unit.id.toString(),
+                                    label: `${unit.name} `
+                                  })
+                                )}
+                                onChange={(newValue: any) => {
                                   const newItems = [...field.value];
                                   newItems[index].unitOfMeasureId =
                                     newValue?.value || '';
                                   field.onChange(newItems);
                                 }}
                                 value={
-                                  unitsOfMeasure[item.productId]
-                                    ?.map((u) => ({
+                                  getUnitsOfMeasureForProduct(item.productId)
+                                    .map((u) => ({
                                       value: u.id.toString(),
                                       label: `${u.name} `
                                     }))
-                                    .find(
-                                      (u) => u.value === item.unitOfMeasureId
-                                    ) ||
-                                  (unitsOfMeasure[item.productId]?.[0]
+                                    .find((u) => u.value === item.unitOfMeasureId) ||
+                                  (getUnitsOfMeasureForProduct(item.productId)[0]
                                     ? {
                                         value:
-                                          unitsOfMeasure[
-                                            item.productId
-                                          ][0].id.toString(),
-                                        label: `${unitsOfMeasure[item.productId][0].name}`
+                                          getUnitsOfMeasureForProduct(item.productId)[0].id.toString(),
+                                        label: `${getUnitsOfMeasureForProduct(item.productId)[0].name} (${getUnitsOfMeasureForProduct(item.productId)[0]})`
                                       }
                                     : null)
                                 }
                                 placeholder={
-                                  loadingUOM[item.productId]
-                                    ? 'Loading...'
-                                    : 'Search unit'
+                                  !item.productId || loadingProducts
+                                    ? 'Select product first'
+                                    : 'Select unit'
                                 }
                                 isSearchable
                                 isDisabled={
-                                  !item.productId ||
-                                  loadingUOM[item.productId] ||
-                                  loadingProducts
+                                  !item.productId || loadingProducts
                                 }
-                                isLoading={loadingUOM[item.productId]}
+                                isLoading={loadingProducts}
                                 styles={isDark ? darkStyles : {}}
                               />
                             </div>

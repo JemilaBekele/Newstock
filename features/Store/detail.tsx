@@ -2052,9 +2052,9 @@ setAllSaleItems(allSaleData);
                   disabled={updating || !allSelectedItemsHaveBatches}
                   variant='default'
                   className='bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800'
-                  size='lg'
+                  size='xxl'
                 >
-                  <Truck className='mr-2 h-56 w-5' />
+                  <Truck className='mr-2 h-10 w-5' />
                   Deliver Selected ({selectedItems.length})
                 </Button>
               </div>
