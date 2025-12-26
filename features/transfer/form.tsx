@@ -2,8 +2,6 @@
 'use client';
 
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import Select from 'react-select';
@@ -34,27 +32,22 @@ import { ITransfer, TransferEntityType } from '@/models/transfer';
 import { getAvailableProductsBySource } from '@/service/productBatchService';
 import { IUnitOfMeasure } from '@/models/UnitOfMeasure';
 
-// Zod schema
-const formSchema = z.object({
-  reference: z.string().optional(),
-  sourceType: z.nativeEnum(TransferEntityType),
-  sourceStoreId: z.string().optional(),
-  sourceShopId: z.string().optional(),
-  destinationType: z.nativeEnum(TransferEntityType),
-  destStoreId: z.string().optional(),
-  destShopId: z.string().optional(),
-  notes: z.string().optional(),
-  items: z
-    .array(
-      z.object({
-        productId: z.string().min(1, 'Product is required'),
-        batchId: z.string().min(1, 'Batch is required'),
-        unitOfMeasureId: z.string().min(1, 'Unit of measure is required'),
-        quantity: z.number().min(1, 'Quantity must be greater than 0')
-      })
-    )
-    .min(1, 'At least one item is required')
-});
+interface FormData {
+  reference?: string;
+  sourceType: TransferEntityType;
+  sourceStoreId?: string;
+  sourceShopId?: string;
+  destinationType: TransferEntityType;
+  destStoreId?: string;
+  destShopId?: string;
+  notes?: string;
+  items: Array<{
+    productId: string;
+    batchId: string;
+    unitOfMeasureId: string;
+    quantity: number;
+  }>;
+}
 
 interface TransferFormProps {
   initialData: ITransfer | null;
@@ -119,8 +112,7 @@ export default function TransferForm({
   
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<FormData>({
     defaultValues: {
       reference: initialData?.reference || '',
       sourceType: initialData?.sourceType || TransferEntityType.STORE,
@@ -146,8 +138,6 @@ export default function TransferForm({
 
   // Create a stable source identifier
   const currentSource = `${sourceType}-${sourceType === TransferEntityType.STORE ? sourceStoreId : sourceShopId}`;
-
- 
 
   // Get unique products from storeStockItems
   const getUniqueProducts = (): StoreStockItem[] => {
@@ -255,6 +245,7 @@ export default function TransferForm({
       setLoadingProducts(false);
     }
   }, [currentSource, sourceType, sourceStoreId, sourceShopId, form, isEdit]);
+
   const calculateAvailableQuantity = (
     storeStockItem: any,
     selectedUnitOfMeasureId: string
@@ -263,11 +254,10 @@ export default function TransferForm({
 
     const baseQuantity = storeStockItem.quantity;
 
-
-   
-    // Convert quantity to selected unit
-    return baseQuantity ;
+    // Simplified: Return base quantity without conversion
+    return baseQuantity;
   };
+
   // Debounced fetch effect
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -325,7 +315,7 @@ export default function TransferForm({
     })
   };
 
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
       const payload = {
@@ -724,7 +714,6 @@ export default function TransferForm({
                           data: storeStockItem
                         }));
 
-                     
                         return (
                           <div
                             key={index}
@@ -749,9 +738,7 @@ export default function TransferForm({
                                   ) || null
                                 }
                                 placeholder={
-                                  loadingProducts
-                                    ? 'Loading products...'
-                                    : 'Search product'
+                                 'Search product'
                                 }
                                 isSearchable
                                 isDisabled={loadingProducts}
@@ -960,7 +947,7 @@ export default function TransferForm({
             <div className='flex justify-end gap-2'>
               <Button
                 type='submit'
-                disabled={isLoading || loadingProducts}
+                disabled={isLoading }
                 className='min-w-24'
               >
                 {isLoading ? (
