@@ -556,9 +556,9 @@ export function TableDashboard() {
           {/* Top Items */}
           <Card className='@container/card'>
             <CardHeader className='pb-3'>
-              <CardTitle className='text-xl'>Top Items by Value</CardTitle>
+              <CardTitle className='text-xl'>Top Items by Quantity</CardTitle>
               <CardDescription className='text-base'>
-                Items with highest stock value
+                Items with highest stock Quantity
               </CardDescription>
             </CardHeader>
             <CardContent className='p-0'>
@@ -572,22 +572,19 @@ export function TableDashboard() {
                       <TableHead className='text-lg font-semibold'>
                         Quantity
                       </TableHead>
-                      <TableHead className='text-lg font-semibold'>
-                        Value
-                      </TableHead>
+                     
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {tables.topItems.length > 0 ? (
                       tables.topItems.map((item, index) => {
                         const totalQuantity = Number(item.totalQuantity || 0);
-                        const totalCostValue = Number(item.totalCostValue || 0);
                         const isTopItem = index < 3;
 
                         return (
                           <TableRow
                             key={`${item.productCode}-${index}`}
-                            className={`hover:bg-muted/50 ${isTopItem ? 'bg-blue-50 dark:bg-blue-950/20 border-l-4 border-l-blue-500 dark:border-l-blue-400' : ''}`}
+                            className={`hover:bg-muted/50 `}
                           >
                             <TableCell className='py-3 text-base font-medium'>
                               <div className="flex items-center gap-2">
@@ -603,12 +600,7 @@ export function TableDashboard() {
                             <TableCell className='py-3 text-base'>
                               {totalQuantity.toLocaleString()}
                             </TableCell>
-                            <TableCell className='py-3 text-base font-medium'>
-                              ${totalCostValue.toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                              })}
-                            </TableCell>
+                           
                           </TableRow>
                         );
                       })
