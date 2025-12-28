@@ -251,7 +251,7 @@ export const deleteUser = async (
   }
   try {
     const axiosInstance = axiosWithAuth(req);
-    const response = await axiosInstance.delete(`/user/${id}`);
+    const response = await axiosInstance.delete(`/users/${id}`);
     return response;
   } catch (error) {
     throw error;
