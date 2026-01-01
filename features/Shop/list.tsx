@@ -749,7 +749,6 @@ const Cart = ({
   const [loading, setLoading] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isOrderConfirmModalOpen, setIsOrderConfirmModalOpen] = useState(false);
-  const [customerSearch, setCustomerSearch] = useState('');
   const [customerError, setCustomerError] = useState<string>('');
 
   const validateForm = () => {
@@ -917,100 +916,215 @@ const Cart = ({
                   );
                 }}
                 styles={{
-                  control: (base, state) => ({
-                    ...base,
-                    minHeight: '40px',
-                    borderColor: customerError 
-                      ? '#ef4444' 
-                      : state.isFocused 
-                        ? '#3b82f6' 
-                        : '#e5e7eb',
-                    backgroundColor: 'transparent',
-                    '&:hover': {
-                      borderColor: customerError ? '#ef4444' : '#9ca3af',
-                    },
-                    boxShadow: state.isFocused 
-                      ? customerError 
-                        ? '0 0 0 1px #ef4444' 
-                        : '0 0 0 1px #3b82f6'
-                      : 'none',
-                    '@media (prefers-color-scheme: dark)': {
-                      borderColor: customerError 
-                        ? '#ef4444' 
-                        : state.isFocused 
-                          ? '#3b82f6' 
-                          : '#4b5563',
-                      backgroundColor: '#374151',
-                      color: '#f3f4f6',
-                      '&:hover': {
-                        borderColor: customerError ? '#ef4444' : '#6b7280',
-                      },
-                    },
-                  }),
-                  placeholder: (base) => ({
-                    ...base,
-                    fontSize: '14px',
-                    color: '#9ca3af',
-                    '@media (min-width: 640px)': {
-                      fontSize: '16px',
-                    },
-                  }),
-                  singleValue: (base) => ({
-                    ...base,
-                    color: '#111827',
-                    '@media (prefers-color-scheme: dark)': {
-                      color: '#f3f4f6',
-                    },
-                  }),
-                  input: (base) => ({
-                    ...base,
-                    color: '#111827',
-                    '@media (prefers-color-scheme: dark)': {
-                      color: '#f3f4f6',
-                    },
-                  }),
-                  menu: (base) => ({
-                    ...base,
-                    zIndex: 9999,
-                    backgroundColor: '#ffffff',
-                    '@media (prefers-color-scheme: dark)': {
-                      backgroundColor: '#374151',
-                      borderColor: '#4b5563',
-                    },
-                  }),
-                  menuList: (base) => ({
-                    ...base,
-                    padding: 0,
-                    '@media (prefers-color-scheme: dark)': {
-                      backgroundColor: '#374151',
-                    },
-                  }),
-                  option: (base, state) => ({
-                    ...base,
-                    fontSize: '14px',
-                    padding: '8px 12px',
-                    backgroundColor: state.isSelected 
-                      ? '#3b82f6' 
-                      : state.isFocused 
-                        ? '#f3f4f6' 
-                        : 'transparent',
-                    color: state.isSelected ? '#ffffff' : '#111827',
-                    '&:active': {
-                      backgroundColor: state.isSelected ? '#3b82f6' : '#e5e7eb',
-                    },
-                    '@media (prefers-color-scheme: dark)': {
-                      backgroundColor: state.isSelected 
-                        ? '#3b82f6' 
-                        : state.isFocused 
-                          ? '#4b5563' 
-                          : 'transparent',
-                      color: state.isSelected ? '#ffffff' : '#f3f4f6',
-                      '&:active': {
-                        backgroundColor: state.isSelected ? '#3b82f6' : '#6b7280',
-                      },
-                    },
-                  }),
-                }}
+  control: (base, state) => ({
+    ...base,
+    minHeight: '40px',
+    borderColor: customerError 
+      ? '#ef4444' 
+      : state.isFocused 
+        ? '#3b82f6' 
+        : '#e5e7eb',
+    backgroundColor: 'white',
+    '&:hover': {
+      borderColor: customerError ? '#ef4444' : '#9ca3af',
+    },
+    boxShadow: state.isFocused 
+      ? customerError 
+        ? '0 0 0 1px #ef4444' 
+        : '0 0 0 1px #3b82f6'
+      : 'none',
+    // Dark mode
+    '.dark &': {
+      borderColor: customerError 
+        ? '#ef4444' 
+        : state.isFocused 
+          ? '#3b82f6' 
+          : '#4b5563',
+      backgroundColor: '#1f2937',
+      color: '#f3f4f6',
+      '&:hover': {
+        borderColor: customerError ? '#ef4444' : '#6b7280',
+      },
+    },
+  }),
+  placeholder: (base) => ({
+    ...base,
+    fontSize: '14px',
+    color: '#6b7280',
+    '@media (min-width: 640px)': {
+      fontSize: '16px',
+    },
+    // Dark mode
+    '.dark &': {
+      color: '#9ca3af',
+    },
+  }),
+  singleValue: (base) => ({
+    ...base,
+    color: '#111827',
+    // Dark mode
+    '.dark &': {
+      color: '#f3f4f6',
+    },
+  }),
+  input: (base) => ({
+    ...base,
+    color: '#111827',
+    // Dark mode
+    '.dark &': {
+      color: '#f3f4f6',
+    },
+  }),
+  menu: (base) => ({
+    ...base,
+    zIndex: 9999,
+    backgroundColor: 'white',
+    borderColor: '#e5e7eb',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    // Dark mode
+    '.dark &': {
+      backgroundColor: '#1f2937',
+      borderColor: '#374151',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3)',
+    },
+  }),
+  menuList: (base) => ({
+    ...base,
+    padding: 0,
+    // Dark mode
+    '.dark &': {
+      backgroundColor: '#1f2937',
+    },
+  }),
+  option: (base, state) => ({
+    ...base,
+    fontSize: '14px',
+    padding: '8px 12px',
+    backgroundColor: state.isSelected 
+      ? '#3b82f6' 
+      : state.isFocused 
+        ? '#f3f4f6' 
+        : 'transparent',
+    color: state.isSelected ? '#ffffff' : '#111827',
+    '&:active': {
+      backgroundColor: state.isSelected ? '#2563eb' : '#e5e7eb',
+    },
+    // Dark mode
+    '.dark &': {
+      backgroundColor: state.isSelected 
+        ? '#3b82f6' 
+        : state.isFocused 
+          ? '#374151' 
+          : 'transparent',
+      color: state.isSelected ? '#ffffff' : '#f3f4f6',
+      '&:active': {
+        backgroundColor: state.isSelected ? '#2563eb' : '#4b5563',
+      },
+    },
+  }),
+  dropdownIndicator: (base, ) => ({
+    ...base,
+    color: '#6b7280',
+    padding: '8px',
+    transition: 'color 0.2s',
+    '&:hover': {
+      color: '#374151',
+    },
+    // Dark mode
+    '.dark &': {
+      color: '#9ca3af',
+      '&:hover': {
+        color: '#f3f4f6',
+      },
+    },
+  }),
+  clearIndicator: (base) => ({
+    ...base,
+    color: '#6b7280',
+    padding: '8px',
+    transition: 'color 0.2s',
+    '&:hover': {
+      color: '#374151',
+    },
+    // Dark mode
+    '.dark &': {
+      color: '#9ca3af',
+      '&:hover': {
+        color: '#f3f4f6',
+      },
+    },
+  }),
+  indicatorSeparator: (base, state) => ({
+    ...base,
+    backgroundColor: state.isDisabled ? 'transparent' : '#e5e7eb',
+    // Dark mode
+    '.dark &': {
+      backgroundColor: state.isDisabled ? 'transparent' : '#4b5563',
+    },
+  }),
+  noOptionsMessage: (base) => ({
+    ...base,
+    color: '#6b7280',
+    padding: '16px',
+    // Dark mode
+    '.dark &': {
+      color: '#9ca3af',
+    },
+  }),
+  loadingMessage: (base) => ({
+    ...base,
+    color: '#6b7280',
+    padding: '16px',
+    // Dark mode
+    '.dark &': {
+      color: '#9ca3af',
+    },
+  }),
+  loadingIndicator: (base) => ({
+    ...base,
+    color: '#6b7280',
+    // Dark mode
+    '.dark &': {
+      color: '#9ca3af',
+    },
+  }),
+  valueContainer: (base) => ({
+    ...base,
+    padding: '0 12px',
+  }),
+  multiValue: (base) => ({
+    ...base,
+    backgroundColor: '#e5e7eb',
+    // Dark mode
+    '.dark &': {
+      backgroundColor: '#374151',
+    },
+  }),
+  multiValueLabel: (base) => ({
+    ...base,
+    color: '#111827',
+    // Dark mode
+    '.dark &': {
+      color: '#f3f4f6',
+    },
+  }),
+  multiValueRemove: (base) => ({
+    ...base,
+    color: '#6b7280',
+    '&:hover': {
+      backgroundColor: '#d1d5db',
+      color: '#374151',
+    },
+    // Dark mode
+    '.dark &': {
+      color: '#9ca3af',
+      '&:hover': {
+        backgroundColor: '#4b5563',
+        color: '#f3f4f6',
+      },
+    },
+  }),
+}}
                 className="react-select-container"
                 classNamePrefix="react-select"
               />
