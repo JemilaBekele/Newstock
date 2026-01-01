@@ -41,6 +41,7 @@ import {
 import { getProductByShops } from '@/service/Product';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import SelectReac from 'react-select';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://ordere.net';
 
@@ -838,17 +839,29 @@ const Cart = ({
     setIsOrderConfirmModalOpen(true);
   };
 
-  const handleCustomerChange = (value: string) => {
-    setSelectedCustomer(value);
-    if (value && customerError) {
-      setCustomerError('');
-    }
-  };
 
   const selectedCustomerDetails = customers.find(
     (c) => c.id === selectedCustomer
   );
-
+  const customerOptions = useMemo(() => {
+    return customers.map((customer) => ({
+      value: customer.id,
+      label: `${customer.name} ${customer.companyName ? `- ${customer.companyName}` : ''}`,
+      phone: customer.phone1,
+      company: customer.companyName,
+      data: customer,
+    }));
+  }, [customers]);
+    const handleCustomerSelect = (selectedOption: any) => {
+    if (selectedOption) {
+      setSelectedCustomer(selectedOption.value);
+      if (customerError) {
+        setCustomerError('');
+      }
+    } else {
+      setSelectedCustomer('');
+    }
+  };
   return (
     <>
       <Card className='mx-auto w-full max-w-[100vw] sm:max-w-4xl lg:max-w-5xl'>
@@ -857,75 +870,221 @@ const Cart = ({
         </CardHeader>
         <CardContent className='space-y-3 px-2 sm:space-y-4 sm:px-4'>
           {/* Customer Selection */}
-          <div className='flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:gap-3'>
-            <div className='w-full flex-1'>
-              <Label htmlFor='customer' className='text-sm sm:text-base'>
-                Customer <span className='text-red-500'>*</span>
-              </Label>
-              <Select
-                value={selectedCustomer}
-                onValueChange={handleCustomerChange}
-              >
-                <SelectTrigger
-                  className={`w-full text-sm sm:text-base ${
-                    customerError ? 'border-red-500 focus:border-red-500' : ''
-                  }`}
-                >
-                  <SelectValue placeholder='Select a customer' />
-                </SelectTrigger>
-                <SelectContent>
-                  <div className='px-2 py-1'>
-                    <Input
-                      type='text'
-                      placeholder='Search customer...'
-                      value={customerSearch}
-                      onChange={(e) => setCustomerSearch(e.target.value)}
-                      className='mb-2 w-full text-sm sm:text-base'
-                    />
-                  </div>
-                  {customers
-                    .filter(
-                      (c) =>
-                        c.name
-                          .toLowerCase()
-                          .includes(customerSearch.toLowerCase()) ||
-                        (c.phone1 &&
-                          c.phone1
-                            .toLowerCase()
-                            .includes(customerSearch.toLowerCase()))
-                    )
-                    .map((customer) => (
-                      <SelectItem
-                        key={customer.id}
-                        value={customer.id ?? ''}
-                        className='text-sm sm:text-base'
-                      >
-                        {customer.name} {customer.companyName}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              {customerError && (
-                <p className='mt-1 text-xs text-red-500'>{customerError}</p>
-              )}
-            </div>
-            <div className='mt-2 flex w-full space-x-2 sm:mt-0 sm:w-auto'>
-              <Button
-                variant='outline'
-                onClick={handleRefreshCustomers}
-                disabled={loading}
-                className='w-full py-2 text-sm sm:w-auto sm:py-2.5 sm:text-base'
-              >
-                {loading ? 'Refreshing...' : 'Refresh'}
-              </Button>
-              <Button
-                onClick={() => setIsCustomerModalOpen(true)}
-                className='w-full py-2 text-sm sm:w-auto sm:py-2.5 sm:text-base'
-              >
-                + New
-              </Button>
-            </div>
+           <div className='flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:gap-3'>
+  <div className='w-full flex-1'>
+    <Label htmlFor='customer' className='text-sm sm:text-base dark:text-gray-300'>
+      Customer <span className='text-red-500'>*</span>
+    </Label>
+    <SelectReac
+      options={customerOptions}
+      value={
+        selectedCustomer
+          ? customerOptions.find(option => option.value === selectedCustomer)
+          : null
+      }
+      onChange={handleCustomerSelect}
+      placeholder="Search customer by name, phone, or company..."
+      isClearable
+      isSearchable
+      noOptionsMessage={() => 'No customers found'}
+      filterOption={(option, inputValue) => {
+        const searchTerm = inputValue.toLowerCase();
+        const customer = option.data;
+        
+        // Safe property access
+        const name = customer?.name?.toLowerCase() || '';
+        const phone1 = customer?.phone1?.toLowerCase() || '';
+                const phone2 = customer?.phone2?.toLowerCase() || '';
+
+        const companyName = customer?.companyName?.toLowerCase() || '';
+        
+        return name.includes(searchTerm) || 
+               phone1.includes(searchTerm) || 
+               phone2.includes(searchTerm) || 
+               companyName.includes(searchTerm);
+      }}
+      formatOptionLabel={(option: any) => (
+        <div className="flex flex-col">
+          <span className="font-medium dark:text-gray-100">{option.data.name}</span>
+          <div className="flex flex-wrap gap-1 text-xs">
+
+            {option.data.phone1 && (
+              <span className="bg-gray-100 px-1 rounded dark:bg-gray-700 dark:text-gray-300">
+                📞 {option.data.phone1}
+              </span>
+            )}
           </div>
+        </div>
+      )}
+      styles={{
+        control: (base, state) => ({
+          ...base,
+          minHeight: '40px',
+          borderColor: customerError 
+            ? '#ef4444' 
+            : state.isFocused 
+              ? '#3b82f6' 
+              : '#e5e7eb',
+          backgroundColor: 'transparent',
+          '&:hover': {
+            borderColor: customerError ? '#ef4444' : '#9ca3af',
+          },
+          boxShadow: state.isFocused 
+            ? customerError 
+              ? '0 0 0 1px #ef4444' 
+              : '0 0 0 1px #3b82f6'
+            : 'none',
+          '@media (prefers-color-scheme: dark)': {
+            borderColor: customerError 
+              ? '#ef4444' 
+              : state.isFocused 
+                ? '#3b82f6' 
+                : '#4b5563',
+            backgroundColor: '#374151',
+            color: '#f3f4f6',
+            '&:hover': {
+              borderColor: customerError ? '#ef4444' : '#6b7280',
+            },
+          },
+        }),
+        placeholder: (base) => ({
+          ...base,
+          fontSize: '14px',
+          color: '#9ca3af',
+          '@media (min-width: 640px)': {
+            fontSize: '16px',
+          },
+          '@media (prefers-color-scheme: dark)': {
+            color: '#9ca3af',
+          },
+        }),
+        singleValue: (base) => ({
+          ...base,
+          color: '#111827',
+          '@media (prefers-color-scheme: dark)': {
+            color: '#f3f4f6',
+          },
+        }),
+        input: (base) => ({
+          ...base,
+          color: '#111827',
+          '@media (prefers-color-scheme: dark)': {
+            color: '#f3f4f6',
+          },
+        }),
+        menu: (base) => ({
+          ...base,
+          zIndex: 9999,
+          backgroundColor: '#ffffff',
+          '@media (prefers-color-scheme: dark)': {
+            backgroundColor: '#374151',
+            borderColor: '#4b5563',
+          },
+        }),
+        menuList: (base) => ({
+          ...base,
+          padding: 0,
+          '@media (prefers-color-scheme: dark)': {
+            backgroundColor: '#374151',
+          },
+        }),
+        option: (base, state) => ({
+          ...base,
+          fontSize: '14px',
+          padding: '8px 12px',
+          backgroundColor: state.isSelected 
+            ? '#3b82f6' 
+            : state.isFocused 
+              ? '#f3f4f6' 
+              : 'transparent',
+          color: state.isSelected ? '#ffffff' : '#111827',
+          '&:active': {
+            backgroundColor: state.isSelected ? '#3b82f6' : '#e5e7eb',
+          },
+          '@media (prefers-color-scheme: dark)': {
+            backgroundColor: state.isSelected 
+              ? '#3b82f6' 
+              : state.isFocused 
+                ? '#4b5563' 
+                : 'transparent',
+            color: state.isSelected ? '#ffffff' : '#f3f4f6',
+            '&:active': {
+              backgroundColor: state.isSelected ? '#3b82f6' : '#6b7280',
+            },
+          },
+        }),
+        dropdownIndicator: (base) => ({
+          ...base,
+          color: '#6b7280',
+          '&:hover': {
+            color: '#374151',
+          },
+          '@media (prefers-color-scheme: dark)': {
+            color: '#9ca3af',
+            '&:hover': {
+              color: '#f3f4f6',
+            },
+          },
+        }),
+        clearIndicator: (base) => ({
+          ...base,
+          color: '#6b7280',
+          '&:hover': {
+            color: '#374151',
+          },
+          '@media (prefers-color-scheme: dark)': {
+            color: '#9ca3af',
+            '&:hover': {
+              color: '#f3f4f6',
+            },
+          },
+        }),
+        indicatorSeparator: (base) => ({
+          ...base,
+          backgroundColor: '#e5e7eb',
+          '@media (prefers-color-scheme: dark)': {
+            backgroundColor: '#4b5563',
+          },
+        }),
+        noOptionsMessage: (base) => ({
+          ...base,
+          color: '#6b7280',
+          '@media (prefers-color-scheme: dark)': {
+            color: '#9ca3af',
+          },
+        }),
+        loadingMessage: (base) => ({
+          ...base,
+          color: '#6b7280',
+          '@media (prefers-color-scheme: dark)': {
+            color: '#9ca3af',
+          },
+        }),
+      }}
+      className="react-select-container"
+      classNamePrefix="react-select"
+    />
+    {customerError && (
+      <p className='mt-1 text-xs text-red-500 dark:text-red-400'>{customerError}</p>
+    )}
+  </div>
+  <div className='mt-2 flex w-full space-x-2 sm:mt-0 sm:w-auto'>
+    <Button
+      variant='outline'
+      onClick={handleRefreshCustomers}
+      disabled={loading}
+      className='w-full py-2 text-sm sm:w-auto sm:py-2.5 sm:text-base dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
+    >
+      {loading ? 'Refreshing...' : 'Refresh'}
+    </Button>
+    <Button
+      onClick={() => setIsCustomerModalOpen(true)}
+      className='w-full py-2 text-sm sm:w-auto sm:py-2.5 sm:text-base dark:bg-blue-700 dark:hover:bg-blue-800'
+    >
+      + New
+    </Button>
+  </div>
+</div>
 
           {/* Cart Items */}
           {items.length === 0 ? (

@@ -600,7 +600,6 @@ export function TableDashboard() {
                             <TableCell className='py-3 text-base'>
                               {totalQuantity.toLocaleString()}
                             </TableCell>
-                           
                           </TableRow>
                         );
                       })

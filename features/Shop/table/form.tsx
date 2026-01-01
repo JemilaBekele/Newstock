@@ -19,6 +19,8 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import SelectReac from 'react-select';
+
 import {
   Table,
   TableBody,
@@ -457,6 +459,11 @@ export default function SalesUpdateForm({
   const unitPrice = getUnitPrice();
   const totalPrice = unitPrice * quantity;
   const additionalPrices = getAdditionalPricesForSelectedShop();
+const productOptions = products.map((product) => ({
+  value: product.id,
+  label: `${product.name}`,
+  data: product,
+}));
 
   return (
     <Card className='mx-auto w-full'>
@@ -732,31 +739,51 @@ export default function SalesUpdateForm({
         >
           <div className='space-y-4'>
             {/* Product Selection */}
-            <div className='space-y-2'>
-              <Label>Select Product</Label>
-              <Select
-                value={selectedProduct?.id || ''}
-                onValueChange={(value) => {
-                  const product = products.find((p) => p.id === value);
-                  setSelectedProduct(product || null);
-                  setSelectedShop(null);
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder='Select a product' />
-                </SelectTrigger>
-                <SelectContent>
-                  {products.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name} -{' '}
-                      {formatPrice(
-                        parseFloat(product.sellPrice?.toString() || '0')
-                      )}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Product Selection */}
+            
+<div className="space-y-2">
+  <Label>Search Product</Label>
+  <SelectReac
+    options={productOptions}
+    value={
+      selectedProduct
+        ? {
+            value: selectedProduct.id,
+            label: `${selectedProduct.name} - ${formatPrice(
+              parseFloat(selectedProduct.sellPrice?.toString() || '0')
+            )}`,
+            data: selectedProduct,
+          }
+        : null
+    }
+    onChange={(selectedOption) => {
+      if (selectedOption) {
+        setSelectedProduct(selectedOption.data);
+        setSelectedShop(null);
+      } else {
+        setSelectedProduct(null);
+        setSelectedShop(null);
+      }
+    }}
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onInputChange={(_inputValue) => {
+      // Optional: You can add debounced search logic here if needed
+    }}
+    placeholder="Type to search products..."
+    isClearable
+    isSearchable
+    noOptionsMessage={() => 'No products found'}
+    styles={{
+      control: (base) => ({
+        ...base,
+        minHeight: '40px',
+      }),
+    }}
+    className="react-select-container"
+    classNamePrefix="react-select"
+  />
+</div>
+
 
             {/* Shop Availability Overview */}
             {selectedProduct && !selectedShop && shopAvailability && (
