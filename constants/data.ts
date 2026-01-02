@@ -40,14 +40,14 @@ export const navItems: NavItem[] = [
       {
         title: 'All Sells Trend',
         url: '/dashboard/Selllist',
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['ps', 'ps'],
         permission: 'VIEW_ALL_SELLS_TREND'
       },
       {
         title: 'Sales Rank',
         url: '/dashboard/Reportsellstatic',
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['ps', 'ps'],
         permission: 'VIEW_SALES_RANK'
       }
@@ -72,21 +72,21 @@ export const navItems: NavItem[] = [
       {
         title: 'Order',
         url: '/dashboard/Pos',
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['ro', 'ro'],
         permission: 'CREATE_SELL'
       },
       {
         title: 'View All Orders',
         url: '/dashboard/Sell',
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['rs', 'rs'],
         permission: 'VIEW_ALL_SELLS'
       },
       {
         title: 'My Orders ',
         url: '/dashboard/UserBasedSell',
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['rs', 'rs'],
         permission: 'CREATE_SELL'
       }
@@ -111,7 +111,7 @@ export const navItems: NavItem[] = [
       {
         title: 'Orders',
         url: '/dashboard/StoreOrder',
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['so', 'so'],
         permission: 'VIEW_AND_MANAGE_STORE_AND_SHOPS'
       }
@@ -144,35 +144,35 @@ export const navItems: NavItem[] = [
       {
         title: 'Category',
         url: '/dashboard/category', // Update to your actual category page route
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['c', 'c'],
         permission: 'VIEW_ALL_CATEGORIES'
       },
       {
         title: 'Subcategory',
         url: '/dashboard/subcategory', // Update to your actual subcategory page route
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['s', 's'],
         permission: 'VIEW_ALL_SUBCATEGORIES'
       },
       {
         title: 'Unit OfMeasure',
         url: '/dashboard/UnitOfMeasure', // Update to your actual subcategory page route UnitOfMeasure ProductUnit
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['u', 'u'],
         permission: 'VIEW_ALL_UNIT_OF_MEASURE'
       },
       {
         title: 'Products',
         url: '/dashboard/Products', // Update to your actual subcategory page route UnitOfMeasure ProductBatch
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['u', 'u'],
         permission: 'VIEW_PRODUCT_ALL'
       },
       {
         title: 'Product Batch',
         url: '/dashboard/ProductBatch', // Update to your actual subcategory page route UnitOfMeasure
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['o', 'o'],
         permission: 'VIEW_ALL_PRODUCT_BATCHES'
       },
@@ -180,21 +180,21 @@ export const navItems: NavItem[] = [
       {
         title: 'Purchase',
         url: '/dashboard/purchase', // Update to your actual subcategory page route UnitOfMeasure  Transfer
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['P', 'P'],
         permission: 'VIEW_ALL_PURCHASES'
       },
       {
         title: 'Transfer',
         url: '/dashboard/Transfer', // Update to your actual subcategory page route UnitOfMeasure
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['y', 'y'],
         permission: 'VIEW_ALL_TRANSFERS'
       },
       {
         title: 'Stock Correction',
         url: '/dashboard/StockCorrection', // Update to your actual subcategory page route UnitOfMeasure
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['s', 's'],
         permission: 'VIEW_ALL_STOCK_CORRECTIONS'
       }
@@ -241,21 +241,21 @@ export const navItems: NavItem[] = [
       {
         title: 'Branch',
         url: '/dashboard/Branch',
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['b', 'b'],
         permission: 'VIEW_ALL_BRANCHES'
       },
       {
         title: 'Shop',
         url: '/dashboard/Shop',
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['h', 'h'],
         permission: 'VIEW_ALL_SHOPS'
       },
       {
         title: 'Store',
         url: '/dashboard/store',
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['sm', 'sm'],
         permission: 'VIEW_ALL_STORES'
       }
@@ -271,7 +271,7 @@ export const navItems: NavItem[] = [
       {
         title: 'Profile',
         url: '/dashboard/profile',
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['m', 'm']
       }
     ]
@@ -287,21 +287,21 @@ export const navItems: NavItem[] = [
       {
         title: 'Role',
         url: '/dashboard/Role',
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['ro', 'ro'],
         permission: 'VIEW_ALL_ROLES'
       },
       {
         title: 'Role Permission',
         url: '/dashboard/RolePermission',
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['po', 'po'],
         permission: 'VIEW_ALL_ROLE_PERMISSIONS'
       },
       {
         title: 'Permission',
         url: '/dashboard/Permission',
-        icon: 'userPen',
+        // icon: 'userPen',
         shortcut: ['pr', 'pr'],
         permission: 'VIEW_ALL_PERMISSIONS'
       }
