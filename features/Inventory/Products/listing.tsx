@@ -20,9 +20,15 @@ export default async function ProductsListingPage({}: ProductsListingPageProps) 
     // ────────────────────────────────────────────────────────────────
     // Client-side search filter
     // ────────────────────────────────────────────────────────────────
-    const filteredData = products.filter((item) =>
-      item.name?.toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredData = products.filter((item) => {
+      const searchLower = search.toLowerCase();
+      return (
+        item.name.toLowerCase().includes(searchLower) ||
+        item.generic?.toLowerCase().includes(searchLower) ||
+        item.productCode?.toLowerCase().includes(searchLower) 
+      );
+    });
+
 
     // ────────────────────────────────────────────────────────────────
     // Client-side pagination
