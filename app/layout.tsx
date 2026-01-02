@@ -8,6 +8,7 @@ import ThemeProvider from '@/components/ThemeToggle/theme-provider';
 import { Toaster } from 'sonner';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import Providers from '@/components/layout/providers';
+import PermissionInitializer from '@/stores/PermissionInitializer';
 
 const META_THEME_COLORS = {
   light: '#ffffff',
@@ -66,6 +67,7 @@ export default async function RootLayout({
             <Providers activeThemeValue={activeThemeValue as string}>
               <Toaster />
               {children}
+  <PermissionInitializer />
               <SessionPermissionSync />
             </Providers>
           </ThemeProvider>

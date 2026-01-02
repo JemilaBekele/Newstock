@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { getUserById, changePassword, updateUserById } from '@/service/user';
 import {
   Dialog,
@@ -14,15 +14,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Edit, Store } from 'lucide-react';
-import {Imployee } from '@/models/employee';
+import { Eye, EyeOff, Edit, Store, LogOut } from 'lucide-react';
+import { usePermissionStore } from '@/stores/auth.store';
+import {Imployee} from '@/models/employee';
 
-// Define types for shop and store
 interface Shop {
   id: string;
   name: string;
-    branch?: Branch;
-
+  branch?: Branch;
 }
 
 interface Branch {
@@ -37,7 +36,7 @@ interface Store {
 }
 
 export default function ProfileViewPage() {
-  const { data: session, status: sessionStatus } = useSession();
+  const { data: session, status: sessionStatus, update } = useSession();
   const [profile, setProfile] = useState<Imployee | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -49,44 +48,87 @@ export default function ProfileViewPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+  
   // Profile update states
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [profileError, setProfileError] = useState('');
   const [updating, setUpdating] = useState(false);
+  
+  // Get store methods
+  const initializeFromSession = usePermissionStore((state) => 
+    state.initializeFromSession
+  );
+  const clearPermissions = usePermissionStore((state) => state.clearPermissions);
+  const isInitialized = usePermissionStore((state) => state._isInitialized);
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!session) {
+      if (!session || sessionStatus !== 'authenticated') {
         setLoading(false);
         return;
       }
 
       try {
+        setLoading(true);
         const data = await getUserById();
 
-        setProfile(data);
+        // Initialize permissions from session
+        if (session.user?.permissions) {
+          initializeFromSession(session.user.permissions);
+        }
+        
         // Initialize form fields with current data
+        setProfile(data);
         setName(data.name || '');
         setEmail(data.email || '');
         setPhone(data.phone || '');
-      } catch  {
-        toast.error('Failed to load profile');
+        
+        toast.success('Profile loaded successfully');
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+        toast.error('Failed to load profile data');
+        
+        // If failed to load profile, clear stale data
+        setProfile(null);
+        clearPermissions();
       } finally {
         setLoading(false);
       }
     };
 
-    // Only fetch if session is authenticated
+    // Fetch profile only when session is authenticated
     if (sessionStatus === 'authenticated') {
       fetchProfile();
     } else if (sessionStatus === 'unauthenticated') {
       setLoading(false);
+      setProfile(null);
+      clearPermissions();
     }
-    // If sessionStatus is 'loading', we keep loading = true
-  }, [session, sessionStatus]);
+  }, [session, sessionStatus, initializeFromSession, clearPermissions]);
+
+  const handleLogout = async () => {
+    try {
+      // Clear permissions before logout
+      clearPermissions();
+      
+      // Clear any cached data
+      localStorage.removeItem('permission-storage');
+      sessionStorage.clear();
+      
+      // Sign out
+      await signOut({ 
+        redirect: true, 
+        callbackUrl: '/login' 
+      });
+      
+      toast.success('Logged out successfully');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Failed to logout');
+    }
+  };
 
   const handlePasswordChange = async () => {
     if (!currentPassword) {
@@ -105,7 +147,7 @@ export default function ProfileViewPage() {
     }
 
     if (newPassword.length < 6) {
-      setPasswordError('New password must be at least 8 characters long');
+      setPasswordError('New password must be at least 6 characters long');
       return;
     }
 
@@ -150,7 +192,7 @@ export default function ProfileViewPage() {
       const updatedData = {
         name: name.trim(),
         email: email.trim(),
-        phone: phone.trim() || undefined // Send undefined if empty
+        phone: phone.trim() || undefined
       };
 
       await updateUserById(profile.id, updatedData);
@@ -159,6 +201,16 @@ export default function ProfileViewPage() {
       setProfile({
         ...profile,
         ...updatedData
+      });
+
+      // Update session data
+      await update({
+        ...session,
+        user: {
+          ...session?.user,
+          name: updatedData.name,
+          email: updatedData.email
+        }
       });
 
       toast.success('Profile updated successfully');
@@ -209,73 +261,114 @@ export default function ProfileViewPage() {
   // Handle session loading state
   if (sessionStatus === 'loading') {
     return (
-      <div className='flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900'>
+      <div className='flex h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-900'>
         <div className='text-center'>
-          <p className='mb-2 text-lg font-semibold text-gray-600 dark:text-gray-300'>
+          <div className='mb-4 inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600'></div>
+          <p className='text-lg font-semibold text-gray-600 dark:text-gray-300'>
             Checking authentication...
           </p>
-          <div className='inline-block h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600'></div>
+          <p className='mt-2 text-sm text-gray-500 dark:text-gray-400'>
+            Please wait while we verify your session
+          </p>
         </div>
       </div>
     );
   }
 
-  // Handle unauthenticated state with detailed logging
+  // Handle unauthenticated state
   if (sessionStatus === 'unauthenticated' || !session) {
     return (
-      <div className='flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900'>
+      <div className='flex h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-900'>
         <div className='max-w-md rounded-lg bg-white p-8 text-center shadow-md dark:bg-gray-800'>
           <h2 className='mb-4 text-xl font-semibold text-gray-700 dark:text-gray-300'>
             Authentication Required
           </h2>
-          <p className='mb-4 text-gray-600 dark:text-gray-400'>
-            You need to be signed in to view this page.
+          <p className='mb-6 text-gray-600 dark:text-gray-400'>
+            Please sign in to access your profile.
           </p>
-          <div className='mb-4 rounded bg-yellow-50 p-4 text-left dark:bg-yellow-900/20'>
-            <p className='text-sm text-gray-600 dark:text-gray-400'>
-              <strong>Debug info:</strong>
-            </p>
-            <p className='text-sm text-gray-600 dark:text-gray-400'>
-              Session status: {sessionStatus}
-            </p>
-            <p className='text-sm text-gray-600 dark:text-gray-400'>
-              Has session data: {session ? 'Yes' : 'No'}
-            </p>
-          </div>
           <Button
             onClick={() => (window.location.href = '/login')}
             className='w-full'
           >
-            Go to Login
+            Sign In
           </Button>
         </div>
       </div>
     );
   }
 
+  // Handle loading state with better UX
   if (loading) {
     return (
-      <div className='flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900'>
+      <div className='flex h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-900'>
         <div className='text-center'>
-          <p className='mb-2 text-lg font-semibold text-gray-600 dark:text-gray-300'>
+          <div className='mb-4 inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600'></div>
+          <p className='text-lg font-semibold text-gray-600 dark:text-gray-300'>
             Loading your profile...
           </p>
-          <div className='inline-block h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600'></div>
+          <p className='mt-2 text-sm text-gray-500 dark:text-gray-400'>
+            Fetching your information
+          </p>
         </div>
       </div>
     );
   }
 
-  if (!profile) {
+  // Handle case when profile data is not available
+  if (!profile || !isInitialized) {
     return (
-      <div className='flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900'>
-        <div className='text-center'>
-          <p className='mb-2 text-lg font-semibold text-gray-600 dark:text-gray-300'>
-            No profile data found
-          </p>
-          <Button onClick={() => window.location.reload()}>
-            Refresh Page
-          </Button>
+      <div className='flex h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-900'>
+        <div className='max-w-md rounded-lg bg-white p-8 text-center shadow-md dark:bg-gray-800'>
+          <div className='mb-6 text-center'>
+            <div className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20'>
+              <svg
+                className='h-8 w-8 text-red-600'
+                fill='none'
+                viewBox='0 0 24 24'
+                stroke='currentColor'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+                />
+              </svg>
+            </div>
+            <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-300'>
+              Profile Data Unavailable
+            </h2>
+            <p className='mt-2 text-gray-600 dark:text-gray-400'>
+              We couldn&apos;t load your profile information. This might be due to:
+            </p>
+            <ul className='mt-3 text-left text-sm text-gray-500 dark:text-gray-400'>
+              <li className='mb-1'>• Session data mismatch</li>
+              <li className='mb-1'>• Network connectivity issues</li>
+              <li className='mb-1'>• Browser cache/storage conflicts</li>
+            </ul>
+          </div>
+          <div className='space-y-3'>
+            <Button
+              onClick={async () => {
+                setLoading(true);
+                // Clear localStorage and reload
+                localStorage.removeItem('permission-storage');
+                window.location.reload();
+              }}
+              className='w-full'
+              variant='default'
+            >
+              Clear Cache & Reload
+            </Button>
+            <Button
+              onClick={handleLogout}
+              className='w-full'
+              variant='outline'
+            >
+              <LogOut className='mr-2 h-4 w-4' />
+              Sign Out & Try Again
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -284,6 +377,7 @@ export default function ProfileViewPage() {
   // Type-safe access to shops and stores
   const shops = (profile.shops as Shop[] | undefined) || [];
   const stores = (profile.stores as Store[] | undefined) || [];
+
 
   return (
     <div className='min-h-screen bg-gray-50 p-6 dark:bg-gray-900'>
