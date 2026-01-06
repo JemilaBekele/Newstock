@@ -20,7 +20,8 @@ import {
   ChevronDown,
   MoreHorizontal,
   Download,
-  Calculator
+  Calculator,
+  DollarSign
 } from 'lucide-react';
 import { utils, writeFile } from 'xlsx';
 
@@ -299,6 +300,10 @@ export function SellsDataTable() {
   // Commission calculation
   const [commissionPercent, setCommissionPercent] = useState<number>(2);
   const [commissionResult, setCommissionResult] = useState<number>(0);
+  
+  // Total sales calculation - ALWAYS SHOW THIS
+  const [totalNetSales, setTotalNetSales] = useState<number>(0);
+  const [totalGrandSales, setTotalGrandSales] = useState<number>(0);
 
   // Dropdown data
   const [sellers, setSellers] = useState<IEmployee[]>([]);
@@ -325,6 +330,18 @@ export function SellsDataTable() {
 
     return [];
   };
+
+  // Calculate total sales whenever data changes
+  useEffect(() => {
+    const calculateTotals = () => {
+      const totalNet = data.reduce((sum, sell) => sum + (sell.NetTotal || 0), 0);
+      const totalGrand = data.reduce((sum, sell) => sum + (sell.grandTotal || 0), 0);
+      setTotalNetSales(totalNet);
+      setTotalGrandSales(totalGrand);
+    };
+
+    calculateTotals();
+  }, [data]);
 
   // Fetch initial data
   useEffect(() => {
@@ -474,10 +491,40 @@ export function SellsDataTable() {
       {/* Filters Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Filters & Commission Calculator</CardTitle>
-          <CardDescription>
-            Filter sells data and calculate commissions
-          </CardDescription>
+          <div className='flex items-center justify-between'>
+            <div>
+              <CardTitle>Filters & Commission Calculator</CardTitle>
+              <CardDescription>
+                Filter sells data and calculate commissions
+              </CardDescription>
+            </div>
+            
+            {/* ALWAYS SHOW TOTAL SALES - NEW SECTION */}
+            <div className='flex items-center gap-4'>
+              <div className='flex flex-col items-end'>
+                <div className='flex items-center gap-2 text-sm font-medium text-gray-600'>
+                  Total Net Sales:
+                </div>
+                <div className='text-lg font-bold text-green-700'>
+                  {new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'ETB'
+                  }).format(totalNetSales)}
+                </div>
+              </div>
+              <div className='flex flex-col items-end'>
+                <div className='flex items-center gap-2 text-sm font-medium text-gray-600'>
+                  Total Sales:
+                </div>
+                <div className='text-lg font-bold text-blue-700'>
+                  {new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'ETB'
+                  }).format(totalGrandSales)}
+                </div>
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className='space-y-4'>
           {/* Update grid to have 6 columns for the filters */}
@@ -633,15 +680,21 @@ export function SellsDataTable() {
                 Manage and analyze your sales data
               </CardDescription>
             </div>
-            <Button
-              onClick={exportToExcel}
-              variant='outline'
-              size='sm'
-              disabled={data.length === 0}
-            >
-              <Download className='mr-2 h-4 w-4' />
-              Export Excel
-            </Button>
+            <div className='flex items-center gap-4'>
+              {/* Show row count and total sales */}
+              <div className='text-sm text-gray-500'>
+                Showing {data.length} records
+              </div>
+              <Button
+                onClick={exportToExcel}
+                variant='outline'
+                size='sm'
+                disabled={data.length === 0}
+              >
+                <Download className='mr-2 h-4 w-4' />
+                Export Excel
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
