@@ -74,7 +74,7 @@ export const getAllSellsuserBased = async ({
       query.append('endDate', endDate);
     }
 
-    const url = `/sells/user/based?${query}`;
+    const url = `/sells/user/based/web?${query}`;
     const response = await axiosInstance.get<SellsResponse>(url);
     return {
       data: response.data.sells,
@@ -110,7 +110,7 @@ export const getAllSellsstoregetAll = async ({
       query.append('endDate', endDate);
     }
 
-    const url = `/sells/store/getAll?${query}`;
+    const url = `/sells/store/getAll/web?${query}`;
     const response = await axiosInstance.get<SellsResponse>(url);
     return {
       data: response.data.sells,

@@ -5,17 +5,20 @@ import { ISupplier } from './supplier';
 import { IUnitOfMeasure } from './UnitOfMeasure';
 
 export interface PurchaseItem {
-  productId: string;
   batchId: string;
+    productId: string;
+
   unitOfMeasureId: string; // foreign key
   unitOfMeasure?: IUnitOfMeasure;
+    product: IProduct;
+
   quantity: number;
   unitPrice: number;
   totalPrice: number;
   id?: string;
 
   batch: IProductBatch;
-  product: IProduct;
+
 }
 export enum PaymentStatus {
   PENDING = 'PENDING',
