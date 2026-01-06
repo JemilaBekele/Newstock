@@ -120,7 +120,7 @@ export default function ProfileViewPage() {
       // Sign out
       await signOut({ 
         redirect: true, 
-        callbackUrl: '/login' 
+        callbackUrl: '/' 
       });
       
       toast.success('Logged out successfully');
@@ -287,7 +287,7 @@ export default function ProfileViewPage() {
             Please sign in to access your profile.
           </p>
           <Button
-            onClick={() => (window.location.href = '/login')}
+            onClick={() => (window.location.href = '/')}
             className='w-full'
           >
             Sign In
@@ -320,45 +320,18 @@ export default function ProfileViewPage() {
       <div className='flex h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-900'>
         <div className='max-w-md rounded-lg bg-white p-8 text-center shadow-md dark:bg-gray-800'>
           <div className='mb-6 text-center'>
-            <div className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20'>
-              <svg
-                className='h-8 w-8 text-red-600'
-                fill='none'
-                viewBox='0 0 24 24'
-                stroke='currentColor'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
-                />
-              </svg>
-            </div>
-            <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-300'>
-              Profile Data Unavailable
-            </h2>
-            <p className='mt-2 text-gray-600 dark:text-gray-400'>
-              We couldn&apos;t load your profile information. This might be due to:
-            </p>
-            <ul className='mt-3 text-left text-sm text-gray-500 dark:text-gray-400'>
-              <li className='mb-1'>• Session data mismatch</li>
-              <li className='mb-1'>• Network connectivity issues</li>
-              <li className='mb-1'>• Browser cache/storage conflicts</li>
-            </ul>
           </div>
           <div className='space-y-3'>
             <Button
               onClick={async () => {
                 setLoading(true);
                 // Clear localStorage and reload
-                localStorage.removeItem('permission-storage');
                 window.location.reload();
               }}
               className='w-full'
               variant='default'
             >
-              Clear Cache & Reload
+              Reload
             </Button>
             <Button
               onClick={handleLogout}
