@@ -684,7 +684,7 @@ const SaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
   const grandTotal = sale.grandTotal || 0;
   const netTotal = sale.NetTotal || 0;
 
-  return (
+return (
     <div className='container mx-auto space-y-6 p-4 md:p-8'>
       {/* Print Section - Hidden from screen but visible in print */}
       <div ref={printRef} className='hidden'>
@@ -692,11 +692,11 @@ const SaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
       </div>
 
       {/* Print and Analysis Buttons */}
-      <div className='flex justify-end gap-2'>
+      <div className='flex flex-col gap-2 sm:flex-row sm:justify-end sm:gap-2'>
         <Button
           onClick={handlePrint}
           variant='outline'
-          className='flex items-center gap-2'
+          className='flex w-full items-center justify-center gap-2 sm:w-auto'
         >
           <Printer className='h-4 w-4' />
           Print Invoice
@@ -705,150 +705,150 @@ const SaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
 
       <Card className='shadow-lg'>
         <CardHeader>
-          <CardTitle className='flex items-center gap-2 text-2xl font-bold'>
-            <ShoppingCart className='text-primary' />
-            Sale {sale.invoiceNo}
-            <Badge variant={getStatusVariant(sale.saleStatus)} className='ml-2'>
-              {sale.saleStatus === SaleStatus.DELIVERED ? (
-                <>
-                  <Check className='mr-1 h-3 w-3' /> {sale.saleStatus}
-                </>
-              ) : sale.saleStatus === SaleStatus.CANCELLED ? (
-                <>
-                  <X className='mr-1 h-3 w-3' /> {sale.saleStatus}
-                </>
-              ) : sale.saleStatus === SaleStatus.PARTIALLY_DELIVERED ? (
-                <>
-                  <Truck className='mr-1 h-3 w-3' /> {sale.saleStatus}
-                </>
-              ) : (
-                <>{sale.saleStatus}</>
-              )}
-            </Badge>
-          </CardTitle>
+          <div className='flex flex-col gap-4 md:flex-row md:items-center md:justify-between'>
+            <CardTitle className='flex flex-col gap-2 text-xl font-bold md:flex-row md:items-center md:text-2xl'>
+              <div className='flex items-center gap-2'>
+                <ShoppingCart className='text-primary h-5 w-5 md:h-6 md:w-6' />
+                Sale {sale.invoiceNo}
+              </div>
+              <Badge variant={getStatusVariant(sale.saleStatus)} className='w-fit'>
+                {sale.saleStatus === SaleStatus.DELIVERED ? (
+                  <>
+                    <Check className='mr-1 h-3 w-3' /> {sale.saleStatus}
+                  </>
+                ) : sale.saleStatus === SaleStatus.CANCELLED ? (
+                  <>
+                    <X className='mr-1 h-3 w-3' /> {sale.saleStatus}
+                  </>
+                ) : sale.saleStatus === SaleStatus.PARTIALLY_DELIVERED ? (
+                  <>
+                    <Truck className='mr-1 h-3 w-3' /> {sale.saleStatus}
+                  </>
+                ) : (
+                  <>{sale.saleStatus}</>
+                )}
+              </Badge>
+            </CardTitle>
+          </div>
         </CardHeader>
         <CardContent className='space-y-6'>
+          {/* Sale Information & Financial Details */}
           <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+            {/* Sale Information */}
             <div className='space-y-4'>
               <h3 className='flex items-center gap-2 text-lg font-semibold'>
                 <Info className='text-primary h-5 w-5' />
                 Sale Information
               </h3>
-              <div className='space-y-2'>
+              <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 md:block md:space-y-2'>
                 <div className='flex items-center gap-2'>
-                  <ShoppingCart className='text-muted-foreground h-4 w-4' />
-                  <p>
-                    <span className='font-medium'>Invoice No:</span>{' '}
-                    {sale.invoiceNo}
+                  <ShoppingCart className='text-muted-foreground h-4 w-4 shrink-0' />
+                  <p className='truncate'>
+                    <span className='font-medium'>Invoice:</span> {sale.invoiceNo}
                   </p>
                 </div>
                 {sale.branch && (
                   <div className='flex items-center gap-2'>
-                    <Package className='text-muted-foreground h-4 w-4' />
-                    <p>
-                      <span className='font-medium'>Branch:</span>{' '}
-                      {sale.branch.name}
+                    <Package className='text-muted-foreground h-4 w-4 shrink-0' />
+                    <p className='truncate'>
+                      <span className='font-medium'>Branch:</span> {sale.branch.name}
                     </p>
                   </div>
                 )}
                 {sale.customer && (
                   <div className='flex items-center gap-2'>
-                    <User className='text-muted-foreground h-4 w-4' />
-                    <p>
-                      <span className='font-medium'>Customer:</span>{' '}
-                      {sale.customer.name}
+                    <User className='text-muted-foreground h-4 w-4 shrink-0' />
+                    <p className='truncate'>
+                      <span className='font-medium'>Customer:</span> {sale.customer.name}
                     </p>
                   </div>
                 )}
                 {sale.createdBy && (
                   <div className='flex items-center gap-2'>
-                    <User className='text-muted-foreground h-4 w-4' />
-                    <p>
-                      <span className='font-medium'>Created By:</span>{' '}
-                      {sale.createdBy.name}
+                    <User className='text-muted-foreground h-4 w-4 shrink-0' />
+                    <p className='truncate'>
+                      <span className='font-medium'>Created By:</span> {sale.createdBy.name}
                     </p>
                   </div>
                 )}
                 {sale.updatedBy && (
                   <div className='flex items-center gap-2'>
-                    <User className='text-muted-foreground h-4 w-4' />
-                    <p>
-                      <span className='font-medium'>Updated By:</span>{' '}
-                      {sale.updatedBy.name}
+                    <User className='text-muted-foreground h-4 w-4 shrink-0' />
+                    <p className='truncate'>
+                      <span className='font-medium'>Updated By:</span> {sale.updatedBy.name}
                     </p>
                   </div>
                 )}
                 {sale.notes && (
-                  <div>
+                  <div className='col-span-full'>
                     <p className='font-medium'>Notes:</p>
-                    <p className='text-muted-foreground'>{sale.notes}</p>
+                    <p className='text-muted-foreground line-clamp-2'>{sale.notes}</p>
                   </div>
                 )}
               </div>
             </div>
 
+            {/* Financial Details */}
             <div className='space-y-4'>
               <h3 className='flex items-center gap-2 text-lg font-semibold'>
                 <CreditCard className='text-primary h-5 w-5' />
                 Financial Details
               </h3>
-              <div className='space-y-2'>
+              <div className='grid grid-cols-2 gap-3 md:block md:space-y-2'>
                 {sale.subTotal > 0 && (
-                  <div>
+                  <div className='flex justify-between md:block'>
                     <p className='font-medium'>Sub Total:</p>
-                    <p className='text-muted-foreground'>
+                    <p className='text-muted-foreground md:mt-1'>
                       {(sale.subTotal || 0).toFixed(2)}
                     </p>
                   </div>
                 )}
                 {sale.discount > 0 && (
-                  <div>
+                  <div className='flex justify-between md:block'>
                     <p className='font-medium'>Discount:</p>
-                    <p className='text-muted-foreground'>
+                    <p className='text-muted-foreground md:mt-1'>
                       {(sale.discount || 0).toFixed(2)}
                     </p>
                   </div>
                 )}
                 {sale.vat > 0 && (
-                  <div>
+                  <div className='flex justify-between md:block'>
                     <p className='font-medium'>VAT:</p>
-                    <p className='text-muted-foreground'>
+                    <p className='text-muted-foreground md:mt-1'>
                       {(sale.vat || 0).toFixed(2)}
                     </p>
                   </div>
                 )}
-                <div>
+                <div className='flex justify-between border-t pt-2 md:border-t-0 md:pt-0'>
                   <p className='font-medium'>Total:</p>
-                  <p className='text-muted-foreground font-bold'>
+                  <p className='text-muted-foreground font-bold md:mt-1'>
                     {grandTotal.toFixed(2)}
                   </p>
                 </div>
-                <div>
+                <div className='flex justify-between'>
                   <p className='font-medium'>Net Total:</p>
-                  <p className='text-muted-foreground font-bold'>
+                  <p className='text-muted-foreground font-bold md:mt-1'>
                     {netTotal.toFixed(2)}
                   </p>
                 </div>
-
-                <div className='flex items-center gap-2'>
-                  <Calendar className='text-muted-foreground h-4 w-4' />
-                  <p>
+                <div className='col-span-full flex items-center gap-2'>
+                  <Calendar className='text-muted-foreground h-4 w-4 shrink-0' />
+                  <p className='truncate'>
                     <span className='font-medium'>Sale Date:</span>{' '}
                     {formatDate(sale.saleDate || sale.createdAt)}
                   </p>
                 </div>
-                <div className='flex items-center gap-2'>
-                  <Package className='text-muted-foreground h-4 w-4' />
+                <div className='col-span-full flex items-center gap-2'>
+                  <Package className='text-muted-foreground h-4 w-4 shrink-0' />
                   <p>
-                    <span className='font-medium'>Total Items:</span>{' '}
-                    {sale.totalProducts}
+                    <span className='font-medium'>Total Items:</span> {sale.totalProducts}
                   </p>
                 </div>
                 {hasUndeliveredItems && (
-                  <div className='flex items-center gap-2'>
-                    <Truck className='h-4 w-4 text-amber-500' />
+                  <div className='col-span-full flex items-center gap-2'>
+                    <Truck className='h-4 w-4 shrink-0 text-amber-500' />
                     <p className='font-medium text-amber-600'>
-                      Undelivered Items: {undeliveredItemsCount}
+                      Undelivered: {undeliveredItemsCount}
                     </p>
                   </div>
                 )}
@@ -856,9 +856,10 @@ const SaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
             </div>
           </div>
 
+          {/* Sale Items Table */}
           {sale.items && sale.items.length > 0 ? (
             <div className='space-y-4'>
-              <div className='flex items-center justify-between'>
+              <div className='flex flex-col justify-between gap-4 sm:flex-row sm:items-center'>
                 <h3 className='text-lg font-semibold'>Sale Items</h3>
                 {hasUndeliveredItems && (
                   <Button
@@ -866,6 +867,7 @@ const SaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                     size='sm'
                     onClick={handleSelectAll}
                     disabled={updating}
+                    className='w-full sm:w-auto'
                   >
                     {selectedItems.length === undeliveredItemsCount
                       ? 'Deselect All'
@@ -873,91 +875,170 @@ const SaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                   </Button>
                 )}
               </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {hasUndeliveredItems && (
-                      <TableHead className='w-12.5'>
-                        <Checkbox
-                          checked={
-                            selectedItems.length === undeliveredItemsCount &&
-                            undeliveredItemsCount > 0
-                          }
-                          onCheckedChange={handleSelectAll}
-                          disabled={updating}
-                        />
-                      </TableHead>
-                    )}
-                    <TableHead>Product</TableHead>
-                    <TableHead>Batch</TableHead>
-                    <TableHead>Shop</TableHead>
-                    <TableHead>Unit</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Unit Price</TableHead>
-                    <TableHead>Total Price</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sale.items.map((item: ISellItem) => {
-                    // Get batch information from batches relation
-                    const batchInfo =
-                      item.batches && item.batches.length > 0
-                        ? item.batches
-                            .map(
-                              (b) =>
-                                `Batch Number: ${b.batch?.batchNumber || 'N/A'} , Quantity: ${b.quantity}`
-                            )
-                            .join(', ')
-                        : 'N/A';
+              
+              {/* Mobile View */}
+              <div className='block space-y-4 md:hidden'>
+                {sale.items.map((item: ISellItem) => {
+                  const batchInfo =
+                    item.batches && item.batches.length > 0
+                      ? item.batches
+                          .map(
+                            (b) =>
+                              `Batch: ${b.batch?.batchNumber || 'N/A'}, Qty: ${b.quantity}`
+                          )
+                          .join(', ')
+                      : 'N/A';
 
-                    return (
-                      <TableRow key={item.id}>
-                        {hasUndeliveredItems && (
-                          <TableCell>
+                  return (
+                    <Card key={item.id} className='p-4'>
+                      <div className='space-y-3'>
+                        {/* Product & Selection */}
+                        <div className='flex items-start justify-between'>
+                          <div>
+                            <p className='font-medium'>{item.product?.name || 'Unknown Product'}</p>
+                            <p className='text-sm text-muted-foreground'>
+                              {item.shop?.name || 'Unknown Shop'}
+                            </p>
+                          </div>
+                          {hasUndeliveredItems && (
                             <Checkbox
                               checked={selectedItems.includes(item.id)}
-                              onCheckedChange={() =>
-                                handleItemSelection(item.id)
-                              }
+                              onCheckedChange={() => handleItemSelection(item.id)}
                               disabled={
                                 updating ||
                                 item.itemSaleStatus === ItemSaleStatus.DELIVERED
                               }
                             />
-                          </TableCell>
-                        )}
-                        <TableCell className='font-medium'>
-                          {item.product?.name || 'Unknown Product'}
-                        </TableCell>
-                        <TableCell>{batchInfo}</TableCell>
-                        <TableCell>
-                          {item.shop?.name || 'Unknown Shop'}
-                        </TableCell>
-                        <TableCell>
-                          {item.unitOfMeasure?.name || 'Unknown Unit'}
-                        </TableCell>
-                        <TableCell>{item.quantity}</TableCell>
-                        <TableCell>{item.unitPrice.toFixed(2)}</TableCell>
-                        <TableCell>{item.totalPrice.toFixed(2)}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              item.itemSaleStatus === ItemSaleStatus.DELIVERED
-                                ? 'default'
-                                : item.itemSaleStatus === ItemSaleStatus.PENDING
-                                  ? 'destructive'
-                                  : 'secondary'
+                          )}
+                        </div>
+
+                        {/* Details Grid */}
+                        <div className='grid grid-cols-2 gap-3 text-sm'>
+                          <div>
+                            <span className='font-medium'>Batch:</span>
+                            <p className='truncate text-muted-foreground'>{batchInfo}</p>
+                          </div>
+                          <div>
+                            <span className='font-medium'>Unit:</span>
+                            <p className='text-muted-foreground'>{item.unitOfMeasure?.name || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className='font-medium'>Qty:</span>
+                            <p className='text-muted-foreground'>{item.quantity}</p>
+                          </div>
+                          <div>
+                            <span className='font-medium'>Unit Price:</span>
+                            <p className='text-muted-foreground'>{item.unitPrice.toFixed(2)}</p>
+                          </div>
+                          <div>
+                            <span className='font-medium'>Total:</span>
+                            <p className='font-medium'>{item.totalPrice.toFixed(2)}</p>
+                          </div>
+                          <div>
+                            <span className='font-medium'>Status:</span>
+                            <Badge
+                              variant={
+                                item.itemSaleStatus === ItemSaleStatus.DELIVERED
+                                  ? 'default'
+                                  : item.itemSaleStatus === ItemSaleStatus.PENDING
+                                    ? 'destructive'
+                                    : 'secondary'
+                              }
+                              className='mt-1'
+                            >
+                              {item.itemSaleStatus}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {/* Desktop View */}
+              <div className='hidden overflow-x-auto md:block'>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {hasUndeliveredItems && (
+                        <TableHead className='w-12.5'>
+                          <Checkbox
+                            checked={
+                              selectedItems.length === undeliveredItemsCount &&
+                              undeliveredItemsCount > 0
                             }
-                          >
-                            {item.itemSaleStatus}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                            onCheckedChange={handleSelectAll}
+                            disabled={updating}
+                          />
+                        </TableHead>
+                      )}
+                      <TableHead>Product</TableHead>
+                      <TableHead>Batch</TableHead>
+                      <TableHead>Shop</TableHead>
+                      <TableHead>Unit</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Unit Price</TableHead>
+                      <TableHead>Total Price</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sale.items.map((item: ISellItem) => {
+                      const batchInfo =
+                        item.batches && item.batches.length > 0
+                          ? item.batches
+                              .map(
+                                (b) =>
+                                  `Batch: ${b.batch?.batchNumber || 'N/A'}, Qty: ${b.quantity}`
+                              )
+                              .join(', ')
+                          : 'N/A';
+
+                      return (
+                        <TableRow key={item.id}>
+                          {hasUndeliveredItems && (
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedItems.includes(item.id)}
+                                onCheckedChange={() => handleItemSelection(item.id)}
+                                disabled={
+                                  updating ||
+                                  item.itemSaleStatus === ItemSaleStatus.DELIVERED
+                                }
+                              />
+                            </TableCell>
+                          )}
+                          <TableCell className='font-medium'>
+                            {item.product?.name || 'Unknown Product'}
+                          </TableCell>
+                          <TableCell className='max-w-xs truncate' title={batchInfo}>
+                            {batchInfo}
+                          </TableCell>
+                          <TableCell>{item.shop?.name || 'Unknown Shop'}</TableCell>
+                          <TableCell>{item.unitOfMeasure?.name || 'Unknown Unit'}</TableCell>
+                          <TableCell>{item.quantity}</TableCell>
+                          <TableCell>{item.unitPrice.toFixed(2)}</TableCell>
+                          <TableCell>{item.totalPrice.toFixed(2)}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                item.itemSaleStatus === ItemSaleStatus.DELIVERED
+                                  ? 'default'
+                                  : item.itemSaleStatus === ItemSaleStatus.PENDING
+                                    ? 'destructive'
+                                    : 'secondary'
+                              }
+                            >
+                              {item.itemSaleStatus}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           ) : (
             <div className='text-muted-foreground py-4 text-center'>
@@ -967,12 +1048,14 @@ const SaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
 
           {/* Stock Corrections Section */}
           <Card className='shadow-lg'>
-            <CardHeader className='flex flex-row items-center justify-between'>
-              <CardTitle className='flex items-center gap-2 text-xl font-bold'>
-                <AlertTriangle className='text-amber-500' />
-                Stock Corrections
+            <CardHeader>
+              <CardTitle className='flex flex-col gap-2 text-xl font-bold sm:flex-row sm:items-center'>
+                <div className='flex items-center gap-2'>
+                  <AlertTriangle className='text-amber-500 h-5 w-5' />
+                  Stock Corrections
+                </div>
                 {stockCorrections.length > 0 && (
-                  <Badge variant='secondary' className='ml-2'>
+                  <Badge variant='secondary' className='w-fit'>
                     {stockCorrections.length}
                   </Badge>
                 )}
@@ -996,9 +1079,10 @@ const SaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                       className='border-l-4 border-l-amber-500'
                     >
                       <CardContent className='pt-4'>
-                        <div className='mb-4 flex items-start justify-between'>
-                          <div>
-                            <div className='mt-2 flex flex-wrap gap-4'>
+                        {/* Correction Header */}
+                        <div className='mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-start'>
+                          <div className='space-y-2'>
+                            <div className='flex flex-wrap gap-2'>
                               <Badge
                                 variant={
                                   correction.status ===
@@ -1011,15 +1095,16 @@ const SaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                                 }
                                 className='capitalize'
                               >
-                                Status: {correction.status.toLowerCase()}
+                                {correction.status.toLowerCase()}
                               </Badge>
                             </div>
                           </div>
                         </div>
 
-                        <div className='mb-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
+                        {/* Correction Details */}
+                        <div className='mb-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2'>
                           <div>
-                            <p className='text-muted-foreground text-sm'>
+                            <p className='text-muted-foreground'>
                               <span className='font-medium'>Created:</span>{' '}
                               {formatDate(correction.createdAt)}
                               {correction.createdBy &&
@@ -1028,7 +1113,7 @@ const SaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                           </div>
                           {correction.reference && (
                             <div>
-                              <p className='text-muted-foreground text-sm'>
+                              <p className='text-muted-foreground'>
                                 <span className='font-medium'>Reference:</span>{' '}
                                 {correction.reference}
                               </p>
@@ -1036,6 +1121,7 @@ const SaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                           )}
                         </div>
 
+                        {/* Notes */}
                         {correction.notes && (
                           <div className='bg-muted mb-4 rounded-md p-3'>
                             <p className='text-sm font-medium'>Notes:</p>
@@ -1045,150 +1131,210 @@ const SaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                           </div>
                         )}
 
+                        {/* Correction Items */}
                         <div className='mt-4'>
-                          <h5 className='mb-3 font-medium'>
-                            Correction Items:
-                          </h5>
-                          <div className='overflow-hidden rounded-lg border'>
+                          <h5 className='mb-3 font-medium'>Correction Items:</h5>
+                          
+                          {/* Mobile View */}
+                          <div className='space-y-4 md:hidden'>
+                            {correction.items?.map((item: ISellStockCorrectionItem, index) => {
+                              const isAddition = item.quantity > 0;
+                              const batchInfo =
+                                item.batches && item.batches.length > 0
+                                  ? item.batches
+                                      .map(
+                                        (b) =>
+                                          `Batch: ${b.batch?.batchNumber || 'N/A'}, Qty: ${b.quantity}`
+                                      )
+                                      .join(', ')
+                                  : 'N/A';
+
+                              return (
+                                <Card key={index} className='p-3'>
+                                  <div className='space-y-3'>
+                                    <div>
+                                      <p className='font-medium'>
+                                        {item.product?.name || 'Unknown Product'}
+                                      </p>
+                                      <p className='text-sm text-muted-foreground'>
+                                        {item.product?.productCode || 'No code'}
+                                      </p>
+                                    </div>
+                                    
+                                    <div className='grid grid-cols-2 gap-2 text-sm'>
+                                      <div>
+                                        <span className='font-medium'>Batch:</span>
+                                        <p className='truncate text-muted-foreground'>{batchInfo}</p>
+                                      </div>
+                                      <div>
+                                        <span className='font-medium'>Shop:</span>
+                                        <p className='text-muted-foreground'>{item.shop?.name || 'N/A'}</p>
+                                      </div>
+                                      <div>
+                                        <span className='font-medium'>Unit Price:</span>
+                                        <p className='text-muted-foreground'>{(item.unitPrice || 0).toFixed(2)}</p>
+                                      </div>
+                                      <div>
+                                        <span className='font-medium'>Qty:</span>
+                                        <Badge
+                                          variant={isAddition ? 'default' : 'destructive'}
+                                          className={isAddition ? 'bg-green-600' : ''}
+                                        >
+                                          {isAddition ? '+' : ''}{item.quantity}
+                                        </Badge>
+                                      </div>
+                                      <div>
+                                        <span className='font-medium'>Total:</span>
+                                        <p className='font-medium'>{(item.totalPrice || 0).toFixed(2)}</p>
+                                      </div>
+                                      <div>
+                                        <span className='font-medium'>Unit:</span>
+                                        <p className='text-muted-foreground'>{item.unitOfMeasure?.name || 'N/A'}</p>
+                                      </div>
+                                      <div className='col-span-full'>
+                                        <span className='font-medium'>Type:</span>
+                                        <Badge
+                                          variant='outline'
+                                          className={
+                                            isAddition
+                                              ? 'border-green-600 text-green-600'
+                                              : 'border-red-600 text-red-600'
+                                          }
+                                        >
+                                          {isAddition ? 'Addition' : 'Reduction'}
+                                        </Badge>
+                                      </div>
+                                      <div className='col-span-full'>
+                                        <span className='font-medium'>Status:</span>
+                                        {(correction.status === SellStockCorrectionStatus.PENDING || 
+                                          correction.status === SellStockCorrectionStatus.PARTIAL) && 
+                                          item.itemSaleStatus === 'DELIVERED' ? (
+                                          <Badge
+                                            variant="default"
+                                            className='mt-1 bg-green-600 hover:bg-green-700'
+                                          >
+                                            Approved
+                                          </Badge>
+                                        ) : item.itemSaleStatus ? (
+                                          <Badge
+                                            variant="secondary"
+                                            className='mt-1 capitalize'
+                                          >
+                                            {item.itemSaleStatus.toLowerCase()}
+                                          </Badge>
+                                        ) : null}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </Card>
+                              );
+                            })}
+                          </div>
+
+                          {/* Desktop View */}
+                          <div className='hidden overflow-x-auto md:block'>
                             <Table>
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead className='w-50'>
-                                    Product
-                                  </TableHead>
-                                  <TableHead className='w-30'>
-                                    Batch
-                                  </TableHead>
-                                  <TableHead className='w-30'>
-                                    Shop
-                                  </TableHead>
-                                  <TableHead className='w-25 text-right'>
-                                    Unit Price
-                                  </TableHead>
-                                  <TableHead className='w-35 text-center'>
-                                    Adjustment Qty
-                                  </TableHead>
-                                  <TableHead className='w-25 text-right'>
-                                    Total Price
-                                  </TableHead>
-                                  <TableHead className='w-20'>
-                                    Unit
-                                  </TableHead>
-                                  <TableHead className='w-25'>
-                                    Type
-                                  </TableHead>
-                                   <TableHead className='w-20'>
-                                                                      Status
-                                                                    </TableHead>
+                                  <TableHead>Product</TableHead>
+                                  <TableHead>Batch</TableHead>
+                                  <TableHead>Shop</TableHead>
+                                  <TableHead className='text-right'>Unit Price</TableHead>
+                                  <TableHead className='text-center'>Adjustment Qty</TableHead>
+                                  <TableHead className='text-right'>Total Price</TableHead>
+                                  <TableHead>Unit</TableHead>
+                                  <TableHead>Type</TableHead>
+                                  <TableHead>Status</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {correction.items &&
-                                  correction.items.map(
-                                    (item: ISellStockCorrectionItem, index) => {
-                                      const isAddition = item.quantity > 0;
-                                      // const isSubtraction = item.quantity < 0;
+                                {correction.items?.map(
+                                  (item: ISellStockCorrectionItem, index) => {
+                                    const isAddition = item.quantity > 0;
+                                    const batchInfo =
+                                      item.batches && item.batches.length > 0
+                                        ? item.batches
+                                            .map(
+                                              (b) =>
+                                                `Batch: ${b.batch?.batchNumber || 'N/A'}, Qty: ${b.quantity}`
+                                            )
+                                            .join(', ')
+                                        : 'N/A';
 
-                                      // Get batch information
-                                      // Get batch information from batches relation
-                                      const batchInfo =
-                                        item.batches && item.batches.length > 0
-                                          ? item.batches
-                                              .map(
-                                                (b) =>
-                                                  `Batch Number: ${b.batch?.batchNumber || 'N/A'} , Quantity: ${b.quantity}`
-                                              )
-                                              .join(', ')
-                                          : 'N/A';
-                                      return (
-                                        <TableRow key={index}>
-                                          <TableCell className='font-medium'>
-                                            <div>
-                                              <div>
-                                                {item.product?.name ||
-                                                  'Unknown Product'}
-                                              </div>
-                                              <div className='text-muted-foreground text-xs'>
-                                                {item.product?.productCode ||
-                                                  'No code'}
-                                              </div>
+                                    return (
+                                      <TableRow key={index}>
+                                        <TableCell className='font-medium'>
+                                          <div>
+                                            <div>{item.product?.name || 'Unknown Product'}</div>
+                                            <div className='text-muted-foreground text-xs'>
+                                              {item.product?.productCode || 'No code'}
                                             </div>
-                                          </TableCell>
-                                          <TableCell>{batchInfo}</TableCell>
-                                          <TableCell>
-                                            <div>
-                                              <div>
-                                                {item.shop?.name ||
-                                                  'Unknown Shop'}
-                                              </div>
-                                              <div className='text-muted-foreground text-xs'>
-                                                {isAddition
-                                                  ? '➕ Stock added'
-                                                  : '➖ Stock reduced'}
-                                              </div>
+                                          </div>
+                                        </TableCell>
+                                        <TableCell className='max-w-xs truncate' title={batchInfo}>
+                                          {batchInfo}
+                                        </TableCell>
+                                        <TableCell>
+                                          <div>
+                                            <div>{item.shop?.name || 'Unknown Shop'}</div>
+                                            <div className='text-muted-foreground text-xs'>
+                                              {isAddition ? '➕ Stock added' : '➖ Stock reduced'}
                                             </div>
-                                          </TableCell>
-                                          <TableCell className='text-right'>
-                                            {(item.unitPrice || 0).toFixed(2)}
-                                          </TableCell>
-                                          <TableCell className='text-center'>
+                                          </div>
+                                        </TableCell>
+                                        <TableCell className='text-right'>
+                                          {(item.unitPrice || 0).toFixed(2)}
+                                        </TableCell>
+                                        <TableCell className='text-center'>
+                                          <Badge
+                                            variant={isAddition ? 'default' : 'destructive'}
+                                            className={isAddition ? 'bg-green-600' : ''}
+                                          >
+                                            {isAddition ? '+' : ''}
+                                            {item.quantity}
+                                          </Badge>
+                                        </TableCell>
+                                        <TableCell className='text-right font-medium'>
+                                          {(item.totalPrice || 0).toFixed(2)}
+                                        </TableCell>
+                                        <TableCell>
+                                          {item.unitOfMeasure?.name || 'N/A'}
+                                        </TableCell>
+                                        <TableCell>
+                                          <Badge
+                                            variant='outline'
+                                            className={
+                                              isAddition
+                                                ? 'border-green-600 text-green-600'
+                                                : 'border-red-600 text-red-600'
+                                            }
+                                          >
+                                            {isAddition ? 'Addition' : 'Reduction'}
+                                          </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                          {(correction.status === SellStockCorrectionStatus.PENDING || 
+                                            correction.status === SellStockCorrectionStatus.PARTIAL) && 
+                                            item.itemSaleStatus === 'DELIVERED' ? (
                                             <Badge
-                                              variant={
-                                                isAddition
-                                                  ? 'default'
-                                                  : 'destructive'
-                                              }
-                                              className={
-                                                isAddition ? 'bg-green-600' : ''
-                                              }
+                                              variant="default"
+                                              className='bg-green-600 hover:bg-green-700'
                                             >
-                                              {isAddition ? '+' : ''}
-                                              {item.quantity}
+                                              Approved
                                             </Badge>
-                                          </TableCell>
-                                          <TableCell className='text-right font-medium'>
-                                            {(item.totalPrice || 0).toFixed(2)}
-                                          </TableCell>
-                                          <TableCell>
-                                            {item.unitOfMeasure?.name || 'N/A'}
-                                          </TableCell>
-                                          <TableCell>
+                                          ) : item.itemSaleStatus ? (
                                             <Badge
-                                              variant='outline'
-                                              className={
-                                                isAddition
-                                                  ? 'border-green-600 text-green-600'
-                                                  : 'border-red-600 text-red-600'
-                                              }
+                                              variant="secondary"
+                                              className='capitalize'
                                             >
-                                              {isAddition
-                                                ? 'Addition'
-                                                : 'Reduction'}
+                                              {item.itemSaleStatus.toLowerCase()}
                                             </Badge>
-                                          </TableCell>                                           <TableCell>
-                                            {/* Show checkbox for PENDING or PARTIAL corrections where item is not yet DELIVERED */}
-                                            {(correction.status === SellStockCorrectionStatus.PENDING || 
-                                              correction.status === SellStockCorrectionStatus.PARTIAL) && 
-                                              item.itemSaleStatus === 'DELIVERED' ? (
-                                              <Badge
-                                                variant="default"
-                                                className='capitalize bg-green-600 hover:bg-green-700'
-                                              >
-                                                Approved
-                                              </Badge>
-                                            ) : item.itemSaleStatus ? (
-                                              <Badge
-                                                variant="secondary"
-                                                className='capitalize'
-                                              >
-                                                {item.itemSaleStatus.toLowerCase()}
-                                              </Badge>
-                                            ) : null}
-                                          </TableCell>
-                                        </TableRow>
-                                      );
-                                    }
-                                  )}
+                                          ) : null}
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  }
+                                )}
                               </TableBody>
                             </Table>
                           </div>
@@ -1196,19 +1342,15 @@ const SaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
                           {/* Correction Summary */}
                           {correction.items && correction.items.length > 0 && (
                             <div className='mt-4 space-y-2'>
-                              <div className='flex items-center justify-between rounded-lg bg-gray-50 p-3 dark:bg-gray-800'>
+                              <div className='flex flex-col justify-between rounded-lg bg-gray-50 p-3 dark:bg-gray-800 sm:flex-row'>
                                 <div>
-                                  <span className='font-medium'>
-                                    Items Count:{' '}
-                                  </span>
+                                  <span className='font-medium'>Items Count: </span>
                                   <span className='text-muted-foreground'>
                                     {correction.items.length} items
                                   </span>
                                 </div>
-                                <div className='text-right'>
-                                  <span className='font-medium'>
-                                    Correction Total:{' '}
-                                  </span>
+                                <div className='mt-2 text-left sm:mt-0 sm:text-right'>
+                                  <span className='font-medium'>Correction Total: </span>
                                   <span className='text-lg font-bold text-blue-600 dark:text-blue-400'>
                                     {(correction.total || 0).toFixed(2)}
                                   </span>

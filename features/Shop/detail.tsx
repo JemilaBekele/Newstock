@@ -22,7 +22,9 @@ import {
   Printer,
   DollarSign,
   Tag,
-  Scale
+  Scale,
+  Plus,
+  Minus
 } from 'lucide-react';
 import {
   Table,
@@ -1145,561 +1147,930 @@ const SaleDetailPage: React.FC<SaleViewProps> = ({ id }) => {
       )}
 
       <Card className='shadow-lg'>
-        <CardHeader>
-          <CardTitle className='flex items-center gap-2 text-2xl font-bold'>
-            <ShoppingCart className='text-primary' />
-            Sale {sale.invoiceNo}
-            <Badge variant={getStatusVariant(sale.saleStatus)} className='ml-2'>
-              {sale.saleStatus === SaleStatus.DELIVERED ? (
-                <>
-                  <Check className='mr-1 h-3 w-3' /> {sale.saleStatus}
-                </>
-              ) : sale.saleStatus === SaleStatus.CANCELLED ? (
-                <>
-                  <X className='mr-1 h-3 w-3' /> {sale.saleStatus}
-                </>
-              ) : sale.saleStatus === SaleStatus.PARTIALLY_DELIVERED ? (
-                <>
-                  <Truck className='mr-1 h-3 w-3' /> {sale.saleStatus}
-                </>
-              ) : (
-                <>{sale.saleStatus}</>
-              )}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className='space-y-6'>
-          <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-            <div className='space-y-4'>
-              <h3 className='flex items-center gap-2 text-lg font-semibold'>
-                <Info className='text-primary h-5 w-5' />
-                Sale Information
-              </h3>
-              <div className='space-y-2'>
-                <div className='flex items-center gap-2'>
-                  <ShoppingCart className='text-muted-foreground h-4 w-4' />
-                  <p>
-                    <span className='font-medium'>Invoice No:</span>{' '}
-                    {sale.invoiceNo}
-                  </p>
-                </div>
-                {sale.branch && (
-                  <div className='flex items-center gap-2'>
-                    <Package className='text-muted-foreground h-4 w-4' />
-                    <p>
-                      <span className='font-medium'>Branch:</span>{' '}
-                      {sale.branch.name}
-                    </p>
-                  </div>
-                )}
-                {sale.customer && (
-                  <div className='flex items-center gap-2'>
-                    <User className='text-muted-foreground h-4 w-4' />
-                    <p>
-                      <span className='font-medium'>Customer:</span>{' '}
-                      {sale.customer.name}
-                    </p>
-                  </div>
-                )}
-                {sale.createdBy && (
-                  <div className='flex items-center gap-2'>
-                    <User className='text-muted-foreground h-4 w-4' />
-                    <p>
-                      <span className='font-medium'>Created By:</span>{' '}
-                      {sale.createdBy.name}
-                    </p>
-                  </div>
-                )}
-                {sale.updatedBy && (
-                  <div className='flex items-center gap-2'>
-                    <User className='text-muted-foreground h-4 w-4' />
-                    <p>
-                      <span className='font-medium'>Updated By:</span>{' '}
-                      {sale.updatedBy.name}
-                    </p>
-                  </div>
-                )}
-                {sale.notes && (
-                  <div>
-                    <p className='font-medium'>Notes:</p>
-                    <p className='text-muted-foreground'>{sale.notes}</p>
-                  </div>
-                )}
-              </div>
+  <CardHeader>
+    <CardTitle className='flex flex-col gap-2 text-xl font-bold sm:flex-row sm:items-center sm:gap-2 sm:text-2xl'>
+      <div className='flex items-center gap-2'>
+        <ShoppingCart className='text-primary h-5 w-5 sm:h-6 sm:w-6' />
+        <span className='truncate'>Sale {sale.invoiceNo}</span>
+      </div>
+      <Badge 
+        variant={getStatusVariant(sale.saleStatus)} 
+        className='ml-0 mt-1 w-fit sm:ml-2 sm:mt-0'
+      >
+        {sale.saleStatus === SaleStatus.DELIVERED ? (
+          <>
+            <Check className='mr-1 h-3 w-3' /> {sale.saleStatus}
+          </>
+        ) : sale.saleStatus === SaleStatus.CANCELLED ? (
+          <>
+            <X className='mr-1 h-3 w-3' /> {sale.saleStatus}
+          </>
+        ) : sale.saleStatus === SaleStatus.PARTIALLY_DELIVERED ? (
+          <>
+            <Truck className='mr-1 h-3 w-3' /> {sale.saleStatus}
+          </>
+        ) : (
+          <>{sale.saleStatus}</>
+        )}
+      </Badge>
+    </CardTitle>
+  </CardHeader>
+  <CardContent className='space-y-6'>
+    <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+      {/* Sale Information - Mobile Optimized */}
+      <div className='space-y-4'>
+        <h3 className='flex items-center gap-2 text-base font-semibold sm:text-lg'>
+          <Info className='text-primary h-4 w-4 sm:h-5 sm:w-5' />
+          Sale Information
+        </h3>
+        <div className='space-y-3'>
+          <div className='flex items-start gap-2'>
+            <ShoppingCart className='text-muted-foreground mt-0.5 h-4 w-4 shrink-0' />
+            <p className='wrap-break-word'>
+              <span className='font-medium'>Invoice No:</span>{' '}
+              <span className='break-all'>{sale.invoiceNo}</span>
+            </p>
+          </div>
+          {sale.branch && (
+            <div className='flex items-start gap-2'>
+              <Package className='text-muted-foreground mt-0.5 h-4 w-4 shrink-0' />
+              <p className='wrap-break-word'>
+                <span className='font-medium'>Branch:</span>{' '}
+                {sale.branch.name}
+              </p>
             </div>
+          )}
+          {sale.customer && (
+            <div className='flex items-start gap-2'>
+              <User className='text-muted-foreground mt-0.5 h-4 w-4 shrink-0' />
+              <p className='wrap-break-word'>
+                <span className='font-medium'>Customer:</span>{' '}
+                {sale.customer.name}
+              </p>
+            </div>
+          )}
+          {sale.createdBy && (
+            <div className='flex items-start gap-2'>
+              <User className='text-muted-foreground mt-0.5 h-4 w-4 shrink-0' />
+              <p className='wrap-break-word'>
+                <span className='font-medium'>Created By:</span>{' '}
+                {sale.createdBy.name}
+              </p>
+            </div>
+          )}
+          {sale.updatedBy && (
+            <div className='flex items-start gap-2'>
+              <User className='text-muted-foreground mt-0.5 h-4 w-4 shrink-0' />
+              <p className='wrap-break-word'>
+                <span className='font-medium'>Updated By:</span>{' '}
+                {sale.updatedBy.name}
+              </p>
+            </div>
+          )}
+          {sale.notes && (
+            <div>
+              <p className='font-medium'>Notes:</p>
+              <p className='text-muted-foreground wrap-break-word'>{sale.notes}</p>
+            </div>
+          )}
+        </div>
+      </div>
 
-            <div className='space-y-4'>
-              <h3 className='flex items-center gap-2 text-lg font-semibold'>
-                <CreditCard className='text-primary h-5 w-5' />
-                Financial Details
-              </h3>
-              <div className='space-y-2'>
-                {sale.subTotal > 0 && (
-                  <div>
-                    <p className='font-medium'>Sub Total:</p>
-                    <p className='text-muted-foreground'>
-                      {(sale.subTotal || 0).toFixed(2)}
-                    </p>
-                  </div>
-                )}
-                {sale.discount > 0 && (
-                  <div>
-                    <p className='font-medium'>Discount:</p>
-                    <p className='text-muted-foreground'>
-                      -{(sale.discount || 0).toFixed(2)}
-                    </p>
-                  </div>
-                )}
-                {sale.vat > 0 && (
-                  <div>
-                    <p className='font-medium'>VAT:</p>
-                    <p className='text-muted-foreground'>
-                      {(sale.vat || 0).toFixed(2)}
-                    </p>
-                  </div>
-                )}
-                <div>
-                  <p className='font-medium'>Total:</p>
-                  <p className='text-muted-foreground font-bold'>
-                    {grandTotal.toFixed(2)}
-                  </p>
-                </div>
-                <div>
-                  <p className='font-medium'>Net Total:</p>
-                  <p className='text-muted-foreground font-bold'>
-                    {netTotal.toFixed(2)}
-                  </p>
-                </div>
-
-                <div className='flex items-center gap-2'>
-                  <Calendar className='text-muted-foreground h-4 w-4' />
-                  <p>
-                    <span className='font-medium'>Sale Date:</span>{' '}
-                    {formatDate(sale.saleDate || sale.createdAt)}
-                  </p>
-                </div>
-                <div className='flex items-center gap-2'>
-                  <Package className='text-muted-foreground h-4 w-4' />
-                  <p>
-                    <span className='font-medium'>Total Items:</span>{' '}
-                    {sale.totalProducts}
-                  </p>
-                </div>
-                {hasUndeliveredItems && (
-                  <div className='flex items-center gap-2'>
-                    <Truck className='h-4 w-4 text-amber-500' />
-                    <p className='font-medium text-amber-600'>
-                      Undelivered Items: {undeliveredItemsCount}
-                    </p>
-                  </div>
-                )}
+      {/* Financial Details - Mobile Optimized */}
+      <div className='space-y-4'>
+        <h3 className='flex items-center gap-2 text-base font-semibold sm:text-lg'>
+          <CreditCard className='text-primary h-4 w-4 sm:h-5 sm:w-5' />
+          Financial Details
+        </h3>
+        <div className='space-y-3'>
+          <div className='grid grid-cols-2 gap-2'>
+            {sale.subTotal > 0 && (
+              <div>
+                <p className='font-medium text-sm sm:text-base'>Sub Total:</p>
+                <p className='text-muted-foreground text-sm sm:text-base'>
+                  {(sale.subTotal || 0).toFixed(2)}
+                </p>
               </div>
+            )}
+            {sale.discount > 0 && (
+              <div>
+                <p className='font-medium text-sm sm:text-base'>Discount:</p>
+                <p className='text-muted-foreground text-sm sm:text-base'>
+                  -{(sale.discount || 0).toFixed(2)}
+                </p>
+              </div>
+            )}
+            {sale.vat > 0 && (
+              <div>
+                <p className='font-medium text-sm sm:text-base'>VAT:</p>
+                <p className='text-muted-foreground text-sm sm:text-base'>
+                  {(sale.vat || 0).toFixed(2)}
+                </p>
+              </div>
+            )}
+            <div className='col-span-2 border-t pt-2'>
+              <p className='font-medium text-sm sm:text-base'>Total:</p>
+              <p className='text-muted-foreground text-base font-bold sm:text-lg'>
+                {grandTotal.toFixed(2)}
+              </p>
+            </div>
+            <div className='col-span-2'>
+              <p className='font-medium text-sm sm:text-base'>Net Total:</p>
+              <p className='text-muted-foreground text-base font-bold sm:text-lg'>
+                {netTotal.toFixed(2)}
+              </p>
             </div>
           </div>
 
-          {sale.items && sale.items.length > 0 ? (
-            <div className='space-y-4'>
-              <div className='flex items-center justify-between'>
-                <h3 className='text-lg font-semibold'>Sale Items</h3>
-                {hasUndeliveredItems && (
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    onClick={handleSelectAll}
-                    disabled={updating}
-                  >
-                    {selectedItems.length === undeliveredItemsCount
-                      ? 'Deselect All'
-                      : 'Select All'}
-                  </Button>
+          <div className='space-y-2 pt-2'>
+            <div className='flex items-start gap-2'>
+              <Calendar className='text-muted-foreground mt-0.5 h-4 w-4 shrink-0' />
+              <p className='wrap-break-word'>
+                <span className='font-medium'>Sale Date:</span>{' '}
+                {formatDate(sale.saleDate || sale.createdAt)}
+              </p>
+            </div>
+            <div className='flex items-start gap-2'>
+              <Package className='text-muted-foreground mt-0.5 h-4 w-4 shrink-0' />
+              <p className='wrap-break-word'>
+                <span className='font-medium'>Total Items:</span>{' '}
+                {sale.totalProducts}
+              </p>
+            </div>
+            {hasUndeliveredItems && (
+              <div className='flex items-start gap-2'>
+                <Truck className='mt-0.5 h-4 w-4 shrink-0 text-amber-500' />
+                <p className='font-medium text-amber-600 wrap-break-word'>
+                  Undelivered Items: {undeliveredItemsCount}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Sale Items Table - Mobile Responsive */}
+  {sale.items && sale.items.length > 0 ? (
+  <div className='space-y-4'>
+    <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+      <h3 className='text-base font-semibold sm:text-lg'>Sale Items</h3>
+      {hasUndeliveredItems && (
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={handleSelectAll}
+          disabled={updating}
+          className='w-full sm:w-auto'
+        >
+          {selectedItems.length === undeliveredItemsCount
+            ? 'Deselect All'
+            : 'Select All'}
+        </Button>
+      )}
+    </div>
+
+    {/* Mobile Card View */}
+    <div className='space-y-3 sm:hidden'>
+      {sale.items.map((item: ISellItem) => {
+        const batchInfo =
+          item.batches && item.batches.length > 0
+            ? item.batches
+                .map(
+                  (b) =>
+                    `${b.batch?.batchNumber || 'N/A'} (${b.quantity})`
+                )
+                .join(', ')
+            : 'N/A';
+
+        const isSelected = selectedItems.includes(item.id);
+        const isDelivered = item.itemSaleStatus === ItemSaleStatus.DELIVERED;
+
+        return (
+          <Card
+            key={item.id}
+            className={`border ${isSelected ? 'border-primary ring-1 ring-primary' : ''} ${
+              isDelivered ? 'opacity-80' : ''
+            }`}
+          >
+            <CardContent className='pt-4'>
+              {/* Header with product name and checkbox */}
+              <div className='flex items-start justify-between gap-2'>
+                <div className='flex-1'>
+                  <h4 className='font-semibold leading-tight'>
+                    {item.product?.name || 'Unknown Product'}
+                  </h4>
+                  {item.product?.productCode && (
+                    <p className='text-xs text-muted-foreground'>
+                      Code: {item.product.productCode}
+                    </p>
+                  )}
+                </div>
+                {hasUndeliveredItems && !isDelivered && (
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => handleItemSelection(item.id)}
+                    disabled={updating || isDelivered}
+                    className='mt-0.5'
+                  />
                 )}
               </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {hasUndeliveredItems && (
-                      <TableHead className='w-12.5'>
-                        <Checkbox
-                          checked={
-                            selectedItems.length === undeliveredItemsCount &&
-                            undeliveredItemsCount > 0
-                          }
-                          onCheckedChange={handleSelectAll}
-                          disabled={updating}
-                        />
-                      </TableHead>
-                    )}
-                    <TableHead>Product</TableHead>
-                    <TableHead>Batch</TableHead>
-                    <TableHead>Shop</TableHead>
-                    <TableHead>Unit</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Unit Price</TableHead>
-                    <TableHead>Total Price</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sale.items.map((item: ISellItem) => {
-                    // Get batch information from batches relation
-                    const batchInfo =
-                      item.batches && item.batches.length > 0
-                        ? item.batches
-                            .map(
-                              (b) =>
-                                `Batch Number: ${b.batch?.batchNumber || 'N/A'} , Quantity: ${b.quantity}`
-                            )
-                            .join(', ')
-                        : 'N/A';
 
-                    return (
-                      <TableRow key={item.id}>
-                        {hasUndeliveredItems && (
-                          <TableCell>
-                            <Checkbox
-                              checked={selectedItems.includes(item.id)}
-                              onCheckedChange={() =>
-                                handleItemSelection(item.id)
-                              }
-                              disabled={
-                                updating ||
-                                item.itemSaleStatus === ItemSaleStatus.DELIVERED
-                              }
-                            />
-                          </TableCell>
-                        )}
-                        <TableCell className='font-medium'>
-                          {item.product?.name || 'Unknown Product'}
-                        </TableCell>
-                        <TableCell>{batchInfo}</TableCell>
-                        <TableCell>
-                          {item.shop?.name || 'Unknown Shop'}
-                        </TableCell>
-                        <TableCell>
-                          {item.unitOfMeasure?.name || 'Unknown Unit'}
-                        </TableCell>
-                        <TableCell>{item.quantity}</TableCell>
-                        <TableCell>{item.unitPrice.toFixed(2)}</TableCell>
-                        <TableCell>{item.totalPrice.toFixed(2)}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              item.itemSaleStatus === ItemSaleStatus.DELIVERED
-                                ? 'default'
-                                : item.itemSaleStatus === ItemSaleStatus.PENDING
-                                  ? 'destructive'
-                                  : 'secondary'
-                            }
-                          >
-                            {item.itemSaleStatus}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className='text-muted-foreground py-4 text-center'>
-              No items found in this sale
-            </div>
-          )}
+              {/* Item details in grid */}
+              <div className='mt-3 grid grid-cols-2 gap-2'>
+                <div className='space-y-1'>
+                  <p className='text-xs text-muted-foreground'>Batch</p>
+                  <p className='text-sm font-medium truncate' title={batchInfo}>
+                    {batchInfo}
+                  </p>
+                </div>
+                <div className='space-y-1'>
+                  <p className='text-xs text-muted-foreground'>Shop</p>
+                  <p className='text-sm font-medium truncate'>
+                    {item.shop?.name || 'Unknown'}
+                  </p>
+                </div>
+                <div className='space-y-1'>
+                  <p className='text-xs text-muted-foreground'>Unit</p>
+                  <p className='text-sm font-medium truncate'>
+                    {item.unitOfMeasure?.name || 'Unknown'}
+                  </p>
+                </div>
+                <div className='space-y-1'>
+                  <p className='text-xs text-muted-foreground'>Quantity</p>
+                  <p className='text-sm font-medium'>{item.quantity}</p>
+                </div>
+              </div>
 
-          {/* Stock Corrections Section */}
-          <Card className='shadow-lg'>
-            <CardHeader className='flex flex-row items-center justify-between'>
-              <CardTitle className='flex items-center gap-2 text-xl font-bold'>
-                <AlertTriangle className='text-amber-500' />
-                Stock Corrections
-                {stockCorrections.length > 0 && (
-                  <Badge variant='secondary' className='ml-2'>
-                    {stockCorrections.length}
+              {/* Price and status section */}
+              <div className='mt-3 flex items-center justify-between border-t pt-3'>
+                <div className='space-y-1'>
+                  <p className='text-xs text-muted-foreground'>Unit Price</p>
+                  <p className='text-sm font-semibold'>
+                    {item.unitPrice.toFixed(2)}
+                  </p>
+                </div>
+                <div className='space-y-1'>
+                  <p className='text-xs text-muted-foreground'>Total Price</p>
+                  <p className='text-sm font-bold'>
+                    {item.totalPrice.toFixed(2)}
+                  </p>
+                </div>
+                <div className='space-y-1'>
+                  <p className='text-xs text-muted-foreground text-center'>Status</p>
+                  <Badge
+                    variant={
+                      item.itemSaleStatus === ItemSaleStatus.DELIVERED
+                        ? 'default'
+                        : item.itemSaleStatus === ItemSaleStatus.PENDING
+                          ? 'destructive'
+                          : 'secondary'
+                    }
+                    className='capitalize'
+                  >
+                    {item.itemSaleStatus.toLowerCase()}
                   </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loadingCorrections ? (
-                <div className='flex items-center justify-center py-4'>
-                  <Loader2 className='mr-2 h-6 w-6 animate-spin' />
-                  <p>Loading stock corrections...</p>
                 </div>
-              ) : stockCorrections.length === 0 ? (
-                <div className='text-muted-foreground py-6 text-center'>
-                  <p>No stock corrections found for this sale</p>
-                </div>
-              ) : (
-                <div className='space-y-4'>
-                  {stockCorrections.map((correction) => (
-                    <Card
-                      key={correction.id}
-                      className='border-l-4 border-l-amber-500'
-                    >
-                      <CardContent className='pt-4'>
-                        <div className='mb-4 flex items-start justify-between'>
-                          <div>
-                            <div className='mt-2 flex flex-wrap gap-4'>
-                              <Badge
-                                variant={
-                                  correction.status ===
-                                  SellStockCorrectionStatus.APPROVED
-                                    ? 'default'
-                                    : correction.status ===
-                                        SellStockCorrectionStatus.REJECTED
-                                      ? 'destructive'
-                                      : 'secondary'
-                                }
-                                className='capitalize'
-                              >
-                                Status: {correction.status.toLowerCase()}
-                              </Badge>
-                            </div>
-                          </div>
-                          <div className='flex gap-2'>
-                            {correction.status ===
-                              SellStockCorrectionStatus.PENDING && (
-                              <>
-                                <Button
-                                  variant='destructive'
-                                  size='sm'
-                                  onClick={() =>
-                                    handleCorrectionAction(
-                                      correction.id,
-                                      'reject'
-                                    )
-                                  }
-                                  disabled={updating}
-                                >
-                                  Reject
-                                </Button>
-                                <Button
-                                  variant='outline'
-                                  size='sm'
-                                  onClick={() =>
-                                    handleCorrectionAction(
-                                      correction.id,
-                                      'delete'
-                                    )
-                                  }
-                                  disabled={updating}
-                                >
-                                  Delete
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </div>
+              </div>
 
-                        <div className='mb-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-                          <div>
-                            <p className='text-muted-foreground text-sm'>
-                              <span className='font-medium'>Created:</span>{' '}
-                              {formatDate(correction.createdAt)}
-                              {correction.createdBy &&
-                                ` by ${correction.createdBy.name}`}
-                            </p>
-                          </div>
-                          {correction.reference && (
-                            <div>
-                              <p className='text-muted-foreground text-sm'>
-                                <span className='font-medium'>Reference:</span>{' '}
-                                {correction.reference}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-
-                        {correction.notes && (
-                          <div className='bg-muted mb-4 rounded-md p-3'>
-                            <p className='text-sm font-medium'>Notes:</p>
-                            <p className='text-muted-foreground text-sm'>
-                              {correction.notes}
-                            </p>
-                          </div>
-                        )}
-
-                        <div className='mt-4'>
-                          <h5 className='mb-3 font-medium'>
-                            Correction Items:
-                          </h5>
-                          <div className='overflow-hidden rounded-lg border'>
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead className='w-50'>
-                                    Product
-                                  </TableHead>
-                                  <TableHead className='w-30'>
-                                    Batch
-                                  </TableHead>
-                                  <TableHead className='w-30'>
-                                    Shop
-                                  </TableHead>
-                                  <TableHead className='w-25 text-right'>
-                                    Unit Price
-                                  </TableHead>
-                                  <TableHead className='w-35 text-center'>
-                                    Adjustment Qty
-                                  </TableHead>
-                                  <TableHead className='w-25 text-right'>
-                                    Total Price
-                                  </TableHead>
-                                  <TableHead className='w-20'>
-                                    Unit
-                                  </TableHead>
-                                  <TableHead className='w-25'>
-                                    Type
-                                  </TableHead>
-                                    <TableHead className='w-20'>
-                                                                      Status
-                                                                    </TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {correction.items &&
-                                  correction.items.map(
-                                    (item: ISellStockCorrectionItem, index) => {
-                                      const isAddition = item.quantity > 0;
-                                      // const isSubtraction = item.quantity < 0;
-
-                                      // Get batch information
-                                      // Get batch information from batches relation
-                                      const batchInfo =
-                                        item.batches && item.batches.length > 0
-                                          ? item.batches
-                                              .map(
-                                                (b) =>
-                                                  `Batch Number: ${b.batch?.batchNumber || 'N/A'} , Quantity: ${b.quantity}`
-                                              )
-                                              .join(', ')
-                                          : 'N/A';
-                                      return (
-                                        <TableRow key={index}>
-                                          <TableCell className='font-medium'>
-                                            <div>
-                                              <div>
-                                                {item.product?.name ||
-                                                  'Unknown Product'}
-                                              </div>
-                                              <div className='text-muted-foreground text-xs'>
-                                                {item.product?.productCode ||
-                                                  'No code'}
-                                              </div>
-                                            </div>
-                                          </TableCell>
-                                          <TableCell>{batchInfo}</TableCell>
-                                          <TableCell>
-                                            <div>
-                                              <div>
-                                                {item.shop?.name ||
-                                                  'Unknown Shop'}
-                                              </div>
-                                              <div className='text-muted-foreground text-xs'>
-                                                {isAddition
-                                                  ? '➕ Stock added'
-                                                  : '➖ Stock reduced'}
-                                              </div>
-                                            </div>
-                                          </TableCell>
-                                          <TableCell className='text-right'>
-                                            {(item.unitPrice || 0).toFixed(2)}
-                                          </TableCell>
-                                          <TableCell className='text-center'>
-                                            <Badge
-                                              variant={
-                                                isAddition
-                                                  ? 'default'
-                                                  : 'destructive'
-                                              }
-                                              className={
-                                                isAddition ? 'bg-green-600' : ''
-                                              }
-                                            >
-                                              {isAddition ? '+' : ''}
-                                              {item.quantity}
-                                            </Badge>
-                                          </TableCell>
-                                          <TableCell className='text-right font-medium'>
-                                            {(item.totalPrice || 0).toFixed(2)}
-                                          </TableCell>
-                                          <TableCell>
-                                            {item.unitOfMeasure?.name || 'N/A'}
-                                          </TableCell>
-                                          <TableCell>
-                                            <Badge
-                                              variant='outline'
-                                              className={
-                                                isAddition
-                                                  ? 'border-green-600 text-green-600'
-                                                  : 'border-red-600 text-red-600'
-                                              }
-                                            >
-                                              {isAddition
-                                                ? 'Addition'
-                                                : 'Reduction'}
-                                            </Badge>
-                                          </TableCell>
-                                              <TableCell>
-                                                                                      {(correction.status === SellStockCorrectionStatus.PENDING || 
-                                                                                        correction.status === SellStockCorrectionStatus.PARTIAL) && 
-                                                                                        item.itemSaleStatus === 'DELIVERED' ? (
-                                                                                        <Badge
-                                                                                          variant="default"
-                                                                                          className='capitalize bg-green-600 hover:bg-green-700'
-                                                                                        >
-                                                                                          Approved
-                                                                                        </Badge>
-                                                                                      ) : item.itemSaleStatus ? (
-                                                                                        <Badge
-                                                                                          variant="secondary"
-                                                                                          className='capitalize'
-                                                                                        >
-                                                                                          {item.itemSaleStatus.toLowerCase()}
-                                                                                        </Badge>
-                                                                                      ) : null}
-                                                                                    </TableCell>
-                                        </TableRow>
-                                      );
-                                    }
-                                  )}
-                              </TableBody>
-                            </Table>
-                          </div>
-
-                          {/* Correction Summary */}
-                          {correction.items && correction.items.length > 0 && (
-                            <div className='mt-4 space-y-2'>
-                              <div className='flex items-center justify-between rounded-lg bg-gray-50 p-3 dark:bg-gray-800'>
-                                <div>
-                                  <span className='font-medium'>
-                                    Items Count:{' '}
-                                  </span>
-                                  <span className='text-muted-foreground'>
-                                    {correction.items.length} items
-                                  </span>
-                                </div>
-                                <div className='text-right'>
-                                  <span className='font-medium'>
-                                    Correction Total:{' '}
-                                  </span>
-                                  <span className='text-lg font-bold text-blue-600 dark:text-blue-400'>
-                                    {(correction.total || 0).toFixed(2)}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+              {/* Extra info for delivered items */}
+              {isDelivered && (
+                <div className='mt-2 flex items-center gap-1 text-xs text-muted-foreground'>
+                  <Check className='h-3 w-3' />
+                  <span>Already delivered</span>
                 </div>
               )}
             </CardContent>
           </Card>
+        );
+      })}
+    </div>
+
+    {/* Desktop Table View */}
+    <div className='hidden sm:block overflow-x-auto'>
+      <div className='inline-block min-w-full align-middle'>
+        <div className='overflow-hidden border rounded-lg'>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {hasUndeliveredItems && (
+                  <TableHead className='w-12 px-3'>
+                    <Checkbox
+                      checked={
+                        selectedItems.length === undeliveredItemsCount &&
+                        undeliveredItemsCount > 0
+                      }
+                      onCheckedChange={handleSelectAll}
+                      disabled={updating}
+                    />
+                  </TableHead>
+                )}
+                <TableHead className='min-w-40'>Product</TableHead>
+                <TableHead className='min-w-28'>Batch</TableHead>
+                <TableHead className='min-w-28'>Shop</TableHead>
+                <TableHead className='min-w-20'>Unit</TableHead>
+                <TableHead className='min-w-20'>Quantity</TableHead>
+                <TableHead className='min-w-28'>Unit Price</TableHead>
+                <TableHead className='min-w-28'>Total Price</TableHead>
+                <TableHead className='min-w-32'>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sale.items.map((item: ISellItem) => {
+                const batchInfo =
+                  item.batches && item.batches.length > 0
+                    ? item.batches
+                        .map(
+                          (b) =>
+                            `${b.batch?.batchNumber || 'N/A'} (${b.quantity})`
+                        )
+                        .join(', ')
+                    : 'N/A';
+
+                const isDelivered = item.itemSaleStatus === ItemSaleStatus.DELIVERED;
+
+                return (
+                  <TableRow
+                    key={item.id}
+                    className={`
+                      ${selectedItems.includes(item.id) ? 'bg-primary/5' : ''}
+                      ${isDelivered ? 'opacity-80' : ''}
+                    `}
+                  >
+                    {hasUndeliveredItems && (
+                      <TableCell className='px-3'>
+                        <Checkbox
+                          checked={selectedItems.includes(item.id)}
+                          onCheckedChange={() =>
+                            handleItemSelection(item.id)
+                          }
+                          disabled={
+                            updating ||
+                            isDelivered
+                          }
+                        />
+                      </TableCell>
+                    )}
+                    <TableCell className='font-medium'>
+                      <div className='flex flex-col'>
+                        <span className='font-medium'>
+                          {item.product?.name || 'Unknown Product'}
+                        </span>
+                        {item.product?.productCode && (
+                          <span className='text-xs text-muted-foreground'>
+                            {item.product.productCode}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className='truncate max-w-37.5 block' title={batchInfo}>
+                        {batchInfo}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {item.shop?.name || 'Unknown Shop'}
+                    </TableCell>
+                    <TableCell>
+                      {item.unitOfMeasure?.name || 'Unknown Unit'}
+                    </TableCell>
+                    <TableCell>
+                      <span className='font-medium'>{item.quantity}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className='font-medium'>{item.unitPrice.toFixed(2)}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className='font-bold'>{item.totalPrice.toFixed(2)}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className='flex items-center gap-2'>
+                        <Badge
+                          variant={
+                            isDelivered
+                              ? 'default'
+                              : item.itemSaleStatus === ItemSaleStatus.PENDING
+                                ? 'destructive'
+                                : 'secondary'
+                          }
+                          className='capitalize'
+                        >
+                          {item.itemSaleStatus.toLowerCase()}
+                        </Badge>
+                        {isDelivered && (
+                          <Check className='h-3 w-3 text-muted-foreground' />
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </div>
+
+    {/* Summary for mobile */}
+    <div className='sm:hidden'>
+      <Card>
+        <CardContent className='pt-4'>
+          <div className='space-y-2'>
+            <div className='flex items-center justify-between'>
+              <span className='text-sm font-medium'>Total Items:</span>
+              <span className='font-semibold'>{sale.items.length}</span>
+            </div>
+            <div className='flex items-center justify-between'>
+              <span className='text-sm font-medium'>Undelivered:</span>
+              <span className='font-semibold text-amber-600'>
+                {undeliveredItemsCount}
+              </span>
+            </div>
+            {hasUndeliveredItems && selectedItems.length > 0 && (
+              <div className='flex items-center justify-between border-t pt-2'>
+                <span className='text-sm font-medium'>Selected:</span>
+                <span className='font-bold text-primary'>
+                  {selectedItems.length} items
+                </span>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
+    </div>
+  </div>
+) : (
+  <div className='text-muted-foreground py-8 text-center'>
+    <Package className='mx-auto h-12 w-12 opacity-20' />
+    <p className='mt-2'>No items found in this sale</p>
+  </div>
+)}
+    {/* Stock Corrections Section - Mobile Responsive */}
+    <Card className='shadow-lg'>
+      <CardHeader className='flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between'>
+        <CardTitle className='flex items-center gap-2 text-lg font-bold sm:text-xl'>
+          <AlertTriangle className='text-amber-500 h-5 w-5' />
+          Stock Corrections
+          {stockCorrections.length > 0 && (
+            <Badge variant='secondary' className='ml-2'>
+              {stockCorrections.length}
+            </Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loadingCorrections ? (
+          <div className='flex flex-col items-center justify-center py-4 sm:flex-row'>
+            <Loader2 className='mr-2 h-6 w-6 animate-spin' />
+            <p>Loading stock corrections...</p>
+          </div>
+        ) : stockCorrections.length === 0 ? (
+          <div className='text-muted-foreground py-6 text-center'>
+            <p>No stock corrections found for this sale</p>
+          </div>
+        ) : (
+          <div className='space-y-4'>
+            {stockCorrections.map((correction) => (
+              <Card
+                key={correction.id}
+                className='border-l-4 border-l-amber-500'
+              >
+                <CardContent className='pt-4'>
+                  <div className='mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
+                    <div className='space-y-2'>
+                      <div className='mt-2 flex flex-wrap gap-2'>
+                        <Badge
+                          variant={
+                            correction.status ===
+                            SellStockCorrectionStatus.APPROVED
+                              ? 'default'
+                              : correction.status ===
+                                  SellStockCorrectionStatus.REJECTED
+                                ? 'destructive'
+                                : 'secondary'
+                          }
+                          className='capitalize'
+                        >
+                          {correction.status.toLowerCase()}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className='flex flex-wrap gap-2'>
+                      {correction.status ===
+                        SellStockCorrectionStatus.PENDING && (
+                        <>
+                          <Button
+                            variant='destructive'
+                            size='sm'
+                            onClick={() =>
+                              handleCorrectionAction(
+                                correction.id,
+                                'reject'
+                              )
+                            }
+                            disabled={updating}
+                            className='flex-1 sm:flex-none'
+                          >
+                            Reject
+                          </Button>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={() =>
+                              handleCorrectionAction(
+                                correction.id,
+                                'delete'
+                              )
+                            }
+                            disabled={updating}
+                            className='flex-1 sm:flex-none'
+                          >
+                            Delete
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className='mb-4 space-y-2 md:grid md:grid-cols-2 md:gap-4'>
+                    <div>
+                      <p className='text-muted-foreground text-sm'>
+                        <span className='font-medium'>Created:</span>{' '}
+                        {formatDate(correction.createdAt)}
+                        {correction.createdBy &&
+                          ` by ${correction.createdBy.name}`}
+                      </p>
+                    </div>
+                    {correction.reference && (
+                      <div>
+                        <p className='text-muted-foreground text-sm'>
+                          <span className='font-medium'>Reference:</span>{' '}
+                          {correction.reference}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {correction.notes && (
+                    <div className='bg-muted mb-4 rounded-md p-3'>
+                      <p className='text-sm font-medium'>Notes:</p>
+                      <p className='text-muted-foreground wrap-break-word text-sm'>
+                        {correction.notes}
+                      </p>
+                    </div>
+                  )}
+
+                 <div className='mt-4'>
+  <h5 className='mb-3 font-medium text-base sm:text-lg'>
+    Correction Items:
+  </h5>
+  
+  {/* Mobile Card View */}
+  <div className='space-y-3 sm:hidden'>
+    {correction.items && correction.items.map(
+      (item: ISellStockCorrectionItem, index) => {
+        const isAddition = item.quantity > 0;
+        const batchInfo =
+          item.batches && item.batches.length > 0
+            ? item.batches
+                .map(
+                  (b) =>
+                    `${b.batch?.batchNumber || 'N/A'} (${b.quantity})`
+                )
+                .join(', ')
+            : 'N/A';
+        
+        const isApproved = (correction.status === SellStockCorrectionStatus.PENDING || 
+          correction.status === SellStockCorrectionStatus.PARTIAL) && 
+          item.itemSaleStatus === 'DELIVERED';
+
+        return (
+          <Card 
+            key={index} 
+            className={`border-l-4 ${isAddition ? 'border-l-green-500' : 'border-l-red-500'}`}
+          >
+            <CardContent className='pt-4'>
+              {/* Product Header */}
+              <div className='flex items-start justify-between gap-2'>
+                <div className='flex-1'>
+                  <h6 className='font-semibold leading-tight truncate'>
+                    {item.product?.name || 'Unknown Product'}
+                  </h6>
+                  {item.product?.productCode && (
+                    <p className='text-xs text-muted-foreground'>
+                      Code: {item.product.productCode}
+                    </p>
+                  )}
+                </div>
+                <Badge
+                  variant={isAddition ? 'default' : 'destructive'}
+                  className={`${isAddition ? 'bg-green-600' : ''}`}
+                >
+                  {isAddition ? '+' : ''}{item.quantity}
+                </Badge>
+              </div>
+
+              {/* Details Grid */}
+              <div className='mt-3 grid grid-cols-2 gap-3'>
+                <div className='space-y-1'>
+                  <p className='text-xs text-muted-foreground'>Batch</p>
+                  <p className='text-sm font-medium truncate' title={batchInfo}>
+                    {batchInfo}
+                  </p>
+                </div>
+                <div className='space-y-1'>
+                  <p className='text-xs text-muted-foreground'>Shop</p>
+                  <p className='text-sm font-medium truncate'>
+                    {item.shop?.name || 'Unknown Shop'}
+                  </p>
+                </div>
+                <div className='space-y-1'>
+                  <p className='text-xs text-muted-foreground'>Unit</p>
+                  <p className='text-sm font-medium truncate'>
+                    {item.unitOfMeasure?.name || 'N/A'}
+                  </p>
+                </div>
+                <div className='space-y-1'>
+                  <p className='text-xs text-muted-foreground'>Type</p>
+                  <Badge
+                    variant='outline'
+                    className={`w-fit ${isAddition ? 'border-green-600 text-green-600' : 'border-red-600 text-red-600'}`}
+                  >
+                    {isAddition ? 'Addition' : 'Reduction'}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Price Section */}
+              <div className='mt-3 flex items-center justify-between border-t pt-3'>
+                <div className='space-y-1'>
+                  <p className='text-xs text-muted-foreground'>Unit Price</p>
+                  <p className='text-sm font-semibold'>
+                    {(item.unitPrice || 0).toFixed(2)}
+                  </p>
+                </div>
+                <div className='space-y-1'>
+                  <p className='text-xs text-muted-foreground'>Total Price</p>
+                  <p className='text-sm font-bold'>
+                    {(item.totalPrice || 0).toFixed(2)}
+                  </p>
+                </div>
+                <div className='space-y-1'>
+                  <p className='text-xs text-muted-foreground text-center'>Status</p>
+                  {isApproved ? (
+                    <Badge
+                      variant="default"
+                      className='capitalize bg-green-600 hover:bg-green-700'
+                    >
+                      Approved
+                    </Badge>
+                  ) : item.itemSaleStatus ? (
+                    <Badge
+                      variant="secondary"
+                      className='capitalize'
+                    >
+                      {item.itemSaleStatus.toLowerCase()}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className='capitalize'>
+                      Pending
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Additional Info */}
+              <div className='mt-2 flex items-center gap-2 text-xs text-muted-foreground'>
+                {isAddition ? (
+                  <>
+                    <Plus className='h-3 w-3 text-green-600' />
+                    <span>Stock added</span>
+                  </>
+                ) : (
+                  <>
+                    <Minus className='h-3 w-3 text-red-600' />
+                    <span>Stock reduced</span>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      }
+    )}
+  </div>
+
+  {/* Desktop Table View */}
+  <div className='hidden sm:block overflow-x-auto -mx-4 sm:mx-0'>
+    <div className='inline-block min-w-full align-middle'>
+      <div className='overflow-hidden border sm:rounded-lg'>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className='min-w-48'>Product</TableHead>
+              <TableHead className='min-w-32'>Batch</TableHead>
+              <TableHead className='min-w-32'>Shop</TableHead>
+              <TableHead className='min-w-28'>Price</TableHead>
+              <TableHead className='min-w-32'>Adjustment Qty</TableHead>
+              <TableHead className='min-w-32'>Total Price</TableHead>
+              <TableHead className='min-w-24'>Unit</TableHead>
+              <TableHead className='min-w-28'>Type</TableHead>
+              <TableHead className='min-w-32'>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {correction.items && correction.items.map(
+              (item: ISellStockCorrectionItem, index) => {
+                const isAddition = item.quantity > 0;
+                const batchInfo =
+                  item.batches && item.batches.length > 0
+                    ? item.batches
+                        .map(
+                          (b) =>
+                            `${b.batch?.batchNumber || 'N/A'} (${b.quantity})`
+                        )
+                        .join(', ')
+                    : 'N/A';
+                
+                const isApproved = (correction.status === SellStockCorrectionStatus.PENDING || 
+                  correction.status === SellStockCorrectionStatus.PARTIAL) && 
+                  item.itemSaleStatus === 'DELIVERED';
+
+                return (
+                  <TableRow key={index} className={isAddition ? 'bg-green-50/50 dark:bg-green-950/20' : 'bg-red-50/50 dark:bg-red-950/20'}>
+                    <TableCell className='font-medium'>
+                      <div>
+                        <div className='font-medium'>
+                          {item.product?.name || 'Unknown Product'}
+                        </div>
+                        {item.product?.productCode && (
+                          <div className='text-muted-foreground text-xs'>
+                            {item.product.productCode}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className='truncate max-w-45 block' title={batchInfo}>
+                        {batchInfo}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div>
+                          {item.shop?.name || 'Unknown Shop'}
+                        </div>
+                        <div className='text-muted-foreground text-xs'>
+                          {isAddition ? '➕ Stock added' : '➖ Stock reduced'}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className='font-medium'>
+                      {(item.unitPrice || 0).toFixed(2)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={isAddition ? 'default' : 'destructive'}
+                        className={`${isAddition ? 'bg-green-600' : ''} text-sm`}
+                      >
+                        {isAddition ? '+' : ''}{item.quantity}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className='font-bold'>
+                      {(item.totalPrice || 0).toFixed(2)}
+                    </TableCell>
+                    <TableCell>
+                      <span className='font-medium'>
+                        {item.unitOfMeasure?.name || 'N/A'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant='outline'
+                        className={`${isAddition ? 'border-green-600 text-green-600' : 'border-red-600 text-red-600'}`}
+                      >
+                        {isAddition ? 'Addition' : 'Reduction'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {isApproved ? (
+                        <Badge
+                          variant="default"
+                          className='capitalize bg-green-600 hover:bg-green-700'
+                        >
+                          Approved
+                        </Badge>
+                      ) : item.itemSaleStatus ? (
+                        <Badge
+                          variant="secondary"
+                          className='capitalize'
+                        >
+                          {item.itemSaleStatus.toLowerCase()}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className='capitalize'>
+                          Pending
+                        </Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              }
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  </div>
+
+  {/* Mobile Summary Card */}
+  {correction.items && correction.items.length > 0 && (
+    <>
+      <div className='sm:hidden mt-4'>
+        <Card className='bg-gray-50 dark:bg-gray-800 border-none'>
+          <CardContent className='pt-4'>
+            <div className='space-y-3'>
+              <div className='flex items-center justify-between'>
+                <span className='text-sm font-medium'>Items Count:</span>
+                <span className='font-semibold'>{correction.items.length} items</span>
+              </div>
+              
+              {/* Type Summary */}
+              <div className='space-y-2'>
+                <div className='flex items-center justify-between'>
+                  <div className='flex items-center gap-2'>
+                    <Plus className='h-3 w-3 text-green-600' />
+                    <span className='text-sm text-muted-foreground'>Additions:</span>
+                  </div>
+                  <span className='font-medium text-green-600'>
+                    {correction.items.filter(item => item.quantity > 0).length}
+                  </span>
+                </div>
+                <div className='flex items-center justify-between'>
+                  <div className='flex items-center gap-2'>
+                    <Minus className='h-3 w-3 text-red-600' />
+                    <span className='text-sm text-muted-foreground'>Reductions:</span>
+                  </div>
+                  <span className='font-medium text-red-600'>
+                    {correction.items.filter(item => item.quantity < 0).length}
+                  </span>
+                </div>
+              </div>
+              
+              <div className='border-t pt-3'>
+                <div className='flex items-center justify-between'>
+                  <span className='text-sm font-medium'>Correction Total:</span>
+                  <span className='text-lg font-bold text-blue-600 dark:text-blue-400'>
+                    {(correction.total || 0).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Desktop Summary */}
+      <div className='hidden sm:block mt-4 space-y-2'>
+        <div className='flex flex-col gap-2 rounded-lg bg-gray-50 p-4 dark:bg-gray-800 lg:flex-row lg:items-center lg:justify-between'>
+          <div className='flex flex-wrap items-center gap-4'>
+            <div>
+              <span className='font-medium'>Items Count: </span>
+              <span className='text-muted-foreground'>
+                {correction.items.length} items
+              </span>
+            </div>
+            <div className='flex items-center gap-3'>
+              <div className='flex items-center gap-1'>
+                <Badge variant="default" className='bg-green-600'>
+                  {correction.items.filter(item => item.quantity > 0).length} additions
+                </Badge>
+                <Badge variant="destructive">
+                  {correction.items.filter(item => item.quantity < 0).length} reductions
+                </Badge>
+              </div>
+            </div>
+          </div>
+          <div className='text-right'>
+            <span className='font-medium'>Correction Total: </span>
+            <span className='text-lg font-bold text-blue-600 dark:text-blue-400'>
+              {(correction.total || 0).toFixed(2)}
+            </span>
+          </div>
+        </div>
+      </div>
+    </>
+  )}
+</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  </CardContent>
+</Card>
     </div>
   );
 };

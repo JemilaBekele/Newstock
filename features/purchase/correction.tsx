@@ -376,7 +376,7 @@ export default function PurchaseCorrectionForm({
         toast.success('Purchase correction created successfully');
       }
 
-      router.push('/dashboard/StockCorrection');
+      router.push('/dashboard/purchase');
       router.refresh();
     } catch (error: any) {
       const message =

@@ -458,7 +458,7 @@ useEffect(() => {
   const additionalPrices = getAdditionalPricesForSelectedShop();
 const productOptions = products.map((product) => ({
   value: product.id,
-  label: `${product.name} - ${formatPrice(parseFloat(product.sellPrice?.toString() || '0'))}`,
+  label: `${product.name}}`,
   data: product, // Make sure this is the full product object
   // Add searchable text as a separate property
   searchText: `${product.name} ${product.generic || ''} ${product.productCode}`.toLowerCase()

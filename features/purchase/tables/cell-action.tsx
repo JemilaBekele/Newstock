@@ -91,7 +91,7 @@ export const PurchaseCellAction: React.FC<CellActionProps> = ({ data }) => {
               <DropdownMenuItem
                 onClick={() =>
                   router.push(
-                    `/dashboard/purchase/StockCorrection?id=${data.id}`
+                    `/dashboard/purchase/StockCorrection/${data.id}`
                   )
                 }
               >

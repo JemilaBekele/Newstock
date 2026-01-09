@@ -506,37 +506,70 @@ const TransferDetailPage: React.FC<TransferViewProps> = ({ id }) => {
           </div>
 
           {/* Transfer Items Table Section */}
-          {transfer.items?.length > 0 && (
-            <div className='space-y-4'>
-              <h3 className='text-lg font-semibold'>Transfer Items</h3>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Batch</TableHead>
-                    <TableHead>Unit</TableHead>
-                    <TableHead>Quantity</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {transfer.items.map((item: ITransferItem) => (
-                    <TableRow key={item.id}>
-                      <TableCell className='font-medium'>
-                        {item.product?.name || 'Unknown Product'}
-                      </TableCell>
-                      <TableCell>
-                        {item.batch?.batchNumber || 'Unknown Batch'}
-                      </TableCell>
-                      <TableCell>
-                        {item.unitOfMeasure?.name || 'Unknown Unit'}
-                      </TableCell>
-                      <TableCell>{item.quantity}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+         {transfer.items?.length > 0 && (
+  <div className='space-y-4'>
+    <h3 className='text-lg font-semibold'>Transfer Items</h3>
+    
+    {/* Desktop Table */}
+    <div className='hidden md:block'>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Product</TableHead>
+            <TableHead>Batch</TableHead>
+            <TableHead>Unit</TableHead>
+            <TableHead>Quantity</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {transfer.items.map((item: ITransferItem) => (
+            <TableRow key={item.id}>
+              <TableCell className='font-medium'>
+                {item.product?.name || 'Unknown Product'}
+              </TableCell>
+              <TableCell>
+                {item.batch?.batchNumber || 'Unknown Batch'}
+              </TableCell>
+              <TableCell>
+                {item.unitOfMeasure?.name || 'Unknown Unit'}
+              </TableCell>
+              <TableCell>{item.quantity}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+
+    {/* Mobile Cards */}
+    <div className='md:hidden space-y-3'>
+      {transfer.items.map((item: ITransferItem) => (
+        <div 
+          key={item.id} 
+          className='bg-white border rounded-lg p-4 shadow-sm'
+        >
+          <div className='grid grid-cols-2 gap-3'>
+            <div>
+              <p className='text-sm font-medium text-gray-500'>Product</p>
+              <p className='font-medium'>{item.product?.name || 'Unknown Product'}</p>
             </div>
-          )}
+            <div>
+              <p className='text-sm font-medium text-gray-500'>Quantity</p>
+              <p>{item.quantity}</p>
+            </div>
+            <div>
+              <p className='text-sm font-medium text-gray-500'>Batch</p>
+              <p>{item.batch?.batchNumber || 'Unknown Batch'}</p>
+            </div>
+            <div>
+              <p className='text-sm font-medium text-gray-500'>Unit</p>
+              <p>{item.unitOfMeasure?.name || 'Unknown Unit'}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
         </CardContent>
       </Card>
     </div>

@@ -7,13 +7,13 @@ type TPurchaseViewPageProps = {
   purchaseId: string;
 };
 
-export default async function PurchaseViewPage({
+export default async function PurchasecorrectPage({
   purchaseId
 }: TPurchaseViewPageProps) {
   let purchase: IPurchase | null = null;
   let initialData: IStockCorrection | null = null;
   let isEdit = false;
-
+console.log('purchaseId:', purchaseId);
   if (purchaseId !== 'new') {
     try {
       purchase = await getPurchaseById(purchaseId);
