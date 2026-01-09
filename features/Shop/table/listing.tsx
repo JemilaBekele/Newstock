@@ -10,10 +10,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import ExportButtons from '@/components/ExportButtonsd';
 
 type SellListingPageProps = object;
 
-// Status card component
 function StatusCard({
   title,
   count,
@@ -264,6 +264,16 @@ export default async function SellListingPage({}: SellListingPageProps) {
 
     return (
       <div className='space-y-6'>
+        {/* Export Buttons */}
+        <div className="flex items-center justify-between">
+          <div className="text-lg font-semibold">Sales Management</div>
+          <ExportButtons 
+            data={filteredData} 
+            statusCounts={allStatusCounts}
+            totalSells={totalSells}
+          />
+        </div>
+
         {/* Radio Group for Status Filter */}
         <RadioGroup
           defaultValue={statusFilter}
