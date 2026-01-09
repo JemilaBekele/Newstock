@@ -206,6 +206,7 @@ export default async function SellListingPage({}: SellListingPageProps) {
 
       // Check customer name (case-sensitive)
       const customerMatch = item.customer?.name?.toLowerCase().includes(searchLower);
+      const createdByMatch = item.createdBy?.name?.toLowerCase().includes(searchLower);
 
       // Check sale status (case-sensitive)
       const saleStatusDisplayText = getSaleStatusDisplayText(item.saleStatus);
@@ -217,11 +218,10 @@ export default async function SellListingPage({}: SellListingPageProps) {
       const saleStatusEnumMatch = item.saleStatus.includes(search);
 
       return (
-        invoiceMatch || customerMatch || saleStatusMatch || saleStatusEnumMatch
+        invoiceMatch || customerMatch || saleStatusMatch || saleStatusEnumMatch || createdByMatch
       );
     });
 
-    // Apply status filter if not 'all'
     if (statusFilter !== 'all') {
       filteredData = filteredData.filter(
         (item) => item.saleStatus === statusFilter
