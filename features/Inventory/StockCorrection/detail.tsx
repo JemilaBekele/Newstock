@@ -268,21 +268,24 @@ const handleApprove = async () => {
                     {stockCorrection.reference || 'N/A'}
                   </p>
                 </div>
-                {(stockCorrection.store?.name || stockCorrection.shop?.name) && (
-    <div className='flex items-start gap-2'>
-      <MapPin className='text-muted-foreground mt-0.5 h-4 w-4 shrink-0' />
-      <div className='space-y-1'>
-        <p className='text-sm font-medium'>Location</p>
-        <p className='text-muted-foreground'>
-          {stockCorrection.store?.name || stockCorrection.shop?.name}
-          {stockCorrection.store?.branch?.name && 
-            ` (${stockCorrection.store.branch.name})`}
-          {stockCorrection.shop?.branch?.name && 
-            ` (${stockCorrection.shop.branch.name})`}
-        </p>
-      </div>
+ {/* Location - Store or Shop */}
+{(stockCorrection.store?.name || stockCorrection.shop?.name) && (
+  <div className='flex items-start gap-2'>
+    <MapPin className='text-muted-foreground mt-0.5 h-4 w-4 shrink-0' />
+    <div className='space-y-1'>
+      <p className='text-sm font-medium'>
+        {stockCorrection.store?.name ? 'Store' : 'Shop'}
+      </p>
+      <p className='text-muted-foreground'>
+        {stockCorrection.store?.name || stockCorrection.shop?.name}
+        {stockCorrection.store?.branch?.name && 
+          ` (${stockCorrection.store.branch.name})`}
+        {stockCorrection.shop?.branch?.name && 
+          ` (${stockCorrection.shop.branch.name})`}
+      </p>
     </div>
-  )}
+  </div>
+)}
 
                 <div className='flex items-center gap-2'>
                   <AlertTriangle className='text-muted-foreground h-4 w-4' />
