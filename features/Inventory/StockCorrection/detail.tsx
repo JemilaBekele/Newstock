@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
@@ -14,7 +15,8 @@ import {
   Check,
   X,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  MapPin
 } from 'lucide-react';
 import {
   Table,
@@ -70,24 +72,30 @@ const StockCorrectionDetailPage: React.FC<StockCorrectionViewProps> = ({
     fetchStockCorrection();
   }, [fetchStockCorrection, id]);
 
-  const handleApprove = async () => {
-    if (!id) return;
+const handleApprove = async () => {
+  if (!id) return;
 
-    setUpdating(true);
-    try {
-      const updatedStockCorrection = await approveStockCorrection(id);
-      setStockCorrection(updatedStockCorrection);
-      toast.success('Stock correction approved successfully');
-
-      // Refresh the data to ensure we have the latest state
-      await fetchStockCorrection();
-    } catch  {
+  setUpdating(true);
+  try {
+    const updatedStockCorrection = await approveStockCorrection(id);
+    setStockCorrection(updatedStockCorrection);
+    toast.success('Stock correction approved successfully');
+    await fetchStockCorrection();
+  } catch (error: any) { // Add error parameter
+    console.error('Backend error:', error); // Log the error
+    
+    // Check for specific error messages
+    if (error?.message?.includes('Insufficient stock')) {
+      toast.error('Insufficient stock available. Please check stock levels.');
+    } else if (error?.response?.data?.message) {
+      toast.error(error.response.data.message);
+    } else {
       toast.error('Failed to approve stock correction');
-    } finally {
-      setUpdating(false);
     }
-  };
-
+  } finally {
+    setUpdating(false);
+  }
+};
   const handleReject = async () => {
     if (!id) return;
 
@@ -260,6 +268,22 @@ const StockCorrectionDetailPage: React.FC<StockCorrectionViewProps> = ({
                     {stockCorrection.reference || 'N/A'}
                   </p>
                 </div>
+                {(stockCorrection.store?.name || stockCorrection.shop?.name) && (
+    <div className='flex items-start gap-2'>
+      <MapPin className='text-muted-foreground mt-0.5 h-4 w-4 shrink-0' />
+      <div className='space-y-1'>
+        <p className='text-sm font-medium'>Location</p>
+        <p className='text-muted-foreground'>
+          {stockCorrection.store?.name || stockCorrection.shop?.name}
+          {stockCorrection.store?.branch?.name && 
+            ` (${stockCorrection.store.branch.name})`}
+          {stockCorrection.shop?.branch?.name && 
+            ` (${stockCorrection.shop.branch.name})`}
+        </p>
+      </div>
+    </div>
+  )}
+
                 <div className='flex items-center gap-2'>
                   <AlertTriangle className='text-muted-foreground h-4 w-4' />
                   <p>
@@ -319,6 +343,7 @@ const StockCorrectionDetailPage: React.FC<StockCorrectionViewProps> = ({
                     </p>
                   </div>
                 )}
+               
               </div>
             </div>
 

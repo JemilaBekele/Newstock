@@ -221,30 +221,26 @@ export default function SalesUpdateForm({
     }, [selectedShop, shopAvailability]);
 
   const getUnitPrice = useCallback((): number => {
-    if (!selectedProduct) return 0;
+  if (!selectedProduct) return 0;
 
-    if (selectedPriceOption === 'custom') {
-      return (
-        parseFloat(customPrice) ||
-        parseFloat(selectedProduct.sellPrice?.toString() || '0')
-      );
-    } else if (selectedPriceOption === 'base') {
-      return parseFloat(selectedProduct.sellPrice?.toString() || '0');
-    } else {
-      const additionalPrice = getAdditionalPricesForSelectedShop().find(
-        (option) => option.id === selectedPriceOption
-      );
-      return (
-        additionalPrice?.price ||
-        parseFloat(selectedProduct.sellPrice?.toString() || '0')
-      );
-    }
-  }, [
-    selectedProduct,
-    selectedPriceOption,
-    customPrice,
-    getAdditionalPricesForSelectedShop
-  ]);
+  if (selectedPriceOption === 'custom') {
+    return (
+      parseFloat(customPrice) || 0 // Return 0 if customPrice is empty
+    );
+  } else {
+    const additionalPrice = getAdditionalPricesForSelectedShop().find(
+      (option) => option.id === selectedPriceOption
+    );
+    return (
+      additionalPrice?.price || 0 // Return 0 if no additional price found
+    );
+  }
+}, [
+  selectedProduct,
+  selectedPriceOption,
+  customPrice,
+  getAdditionalPricesForSelectedShop
+]);
 
   const handleQuantityChange = useCallback(
     (newQuantity: number) => {
@@ -430,14 +426,15 @@ export default function SalesUpdateForm({
   }, []);
 
   // Set default price when shop changes
-  useEffect(() => {
-    if (selectedShop && selectedProduct) {
-      const defaultPrice = selectedProduct.sellPrice?.toString() || '0';
-      setCustomPrice(defaultPrice);
-      setSelectedPriceOption('custom');
-      setQuantity(1);
-    }
-  }, [selectedShop, selectedProduct]);
+ // Replace the useEffect that sets default price
+useEffect(() => {
+  if (selectedShop && selectedProduct) {
+    // Set custom price to empty initially instead of base price
+    setCustomPrice('');
+    setSelectedPriceOption('custom');
+    setQuantity(1);
+  }
+}, [selectedShop, selectedProduct]);
 
   // Validate quantity when available stock changes
   useEffect(() => {
@@ -461,8 +458,10 @@ export default function SalesUpdateForm({
   const additionalPrices = getAdditionalPricesForSelectedShop();
 const productOptions = products.map((product) => ({
   value: product.id,
-  label: `${product.name}`,
-  data: product,
+  label: `${product.name} - ${formatPrice(parseFloat(product.sellPrice?.toString() || '0'))}`,
+  data: product, // Make sure this is the full product object
+  // Add searchable text as a separate property
+  searchText: `${product.name} ${product.generic || ''} ${product.productCode}`.toLowerCase()
 }));
 
   return (
@@ -747,13 +746,7 @@ const productOptions = products.map((product) => ({
     options={productOptions}
     value={
       selectedProduct
-        ? {
-            value: selectedProduct.id,
-            label: `${selectedProduct.name} - ${formatPrice(
-              parseFloat(selectedProduct.sellPrice?.toString() || '0')
-            )}`,
-            data: selectedProduct,
-          }
+        ? productOptions.find(opt => opt.value === selectedProduct.id) || null
         : null
     }
     onChange={(selectedOption) => {
@@ -765,11 +758,31 @@ const productOptions = products.map((product) => ({
         setSelectedShop(null);
       }
     }}
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    onInputChange={(_inputValue) => {
-      // Optional: You can add debounced search logic here if needed
+    filterOption={(option, inputValue) => {
+      if (!inputValue) return true;
+      
+      const searchTerm = inputValue.toLowerCase();
+      
+      // Method 1: Use the pre-computed searchText
+      if (option.data && option.data.searchText) {
+        return option.data.searchText.includes(searchTerm);
+      }
+      
+      // Method 2: Fallback to checking data
+      const product = option.data;
+      if (!product) return false;
+      
+      const name = product.data?.name?.toLowerCase() || '';
+      const generic = product.data?.generic?.toLowerCase() || '';
+      const productCode = product.data?.productCode?.toLowerCase() || '';
+      
+      return (
+        name.includes(searchTerm) ||
+        generic.includes(searchTerm) ||
+        productCode.includes(searchTerm)
+      );
     }}
-    placeholder="Type to search products..."
+    placeholder="Type to search products (by name, generic name, or code)..."
     isClearable
     isSearchable
     noOptionsMessage={() => 'No products found'}
@@ -849,79 +862,54 @@ const productOptions = products.map((product) => ({
             )}
 
             {/* Price Selection */}
-            {selectedShop && selectedProduct && (
-              <div className='space-y-4'>
-                {/* Unit Price Input */}
-                <div className='space-y-2'>
-                  <Label>Unit Price</Label>
-                  <Input
-                    type='number'
-                    min='0'
-                    step='0.01'
-                    value={customPrice}
-                    onChange={(e) => {
-                      setSelectedPriceOption('custom');
-                      setCustomPrice(e.target.value);
-                    }}
-                    placeholder='Enter unit price'
-                  />
-                  <p className='text-xs text-gray-500'>
-                    Base price:{' '}
-                    {formatPrice(
-                      parseFloat(selectedProduct.sellPrice?.toString() || '0')
-                    )}
-                  </p>
-                </div>
+{selectedShop && selectedProduct && (
+  <div className='space-y-4'>
+    {/* Unit Price Input */}
+    <div className='space-y-2'>
+      <Label>Unit Price</Label>
+      <Input
+        type='number'
+        min='0'
+        step='0.01'
+        value={customPrice}
+        onChange={(e) => {
+          setSelectedPriceOption('custom');
+          setCustomPrice(e.target.value);
+        }}
+        placeholder='Enter unit price'
+      />
+      {/* Remove the base price display below the input */}
+    </div>
 
-                {/* Recommended Additional Prices */}
-                {additionalPrices.length > 0 && (
-                  <div className='space-y-2'>
-                    <Label>Recommended Prices</Label>
-                    <div className='flex flex-wrap gap-2'>
-                      <Button
-                        type='button'
-                        variant={
-                          selectedPriceOption === 'base' ? 'default' : 'outline'
-                        }
-                        size='sm'
-                        onClick={() => {
-                          setSelectedPriceOption('base');
-                          setCustomPrice(
-                            selectedProduct.sellPrice?.toString() || '0'
-                          );
-                        }}
-                      >
-                        Base:{' '}
-                        {formatPrice(
-                          parseFloat(
-                            selectedProduct.sellPrice?.toString() || '0'
-                          )
-                        )}
-                      </Button>
-
-                      {additionalPrices.map((option) => (
-                        <Button
-                          key={option.id}
-                          type='button'
-                          variant={
-                            selectedPriceOption === option.id
-                              ? 'default'
-                              : 'outline'
-                          }
-                          size='sm'
-                          onClick={() => {
-                            setSelectedPriceOption(option.id);
-                            setCustomPrice(option.price.toString());
-                          }}
-                        >
-                          {option.label}: {formatPrice(option.price)}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+    {/* Recommended Additional Prices - Modified to exclude base price */}
+    {additionalPrices.length > 0 && (
+      <div className='space-y-2'>
+        <Label>Recommended Prices</Label>
+        <div className='flex flex-wrap gap-2'>
+          {/* Remove the Base price button */}
+          {additionalPrices.map((option) => (
+            <Button
+              key={option.id}
+              type='button'
+              variant={
+                selectedPriceOption === option.id
+                  ? 'default'
+                  : 'outline'
+              }
+              size='sm'
+              onClick={() => {
+                setSelectedPriceOption(option.id);
+                setCustomPrice(option.price.toString());
+              }}
+            >
+              {option.label}: {formatPrice(option.price)}
+            </Button>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+)}
 
             {/* Quantity Input */}
             {selectedShop && (

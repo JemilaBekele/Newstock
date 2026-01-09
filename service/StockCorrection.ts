@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { IncomingMessage } from 'http';
 import { axiosWithAuth } from './cli';
 import { api } from './api';
@@ -117,6 +118,7 @@ export const createStockCorrection = async (
 ) => {
   try {
     const axiosInstance = axiosWithAuth(req);
+    
     const response = await axiosInstance.post(`/stock-corrections`, data);
     return response.data;
   } catch (error) {
