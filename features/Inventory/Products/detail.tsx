@@ -41,7 +41,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { exportToExcel, StockLedgerExportData } from '@/lib/exportExcel';
+import { exportStockLedgerToExcel, StockLedgerExportData } from '@/lib/exportExcel';
 import { Button } from '@/components/ui/button';
 
 interface ProductDetails {
@@ -347,77 +347,87 @@ const ProductDetailsPage: React.FC<ProductDetailsProps> = ({ productId }) => {
     );
   }
 
-  const handleExportExcel = () => {
-    try {
-      if (!productDetails || filteredStockLedgers.length === 0) {
-        toast.error('No data to export');
-        return;
-      }
-
-      // Sort ledgers for export
-      const sortedLedgers = [...filteredStockLedgers].sort(
-        (a, b) =>
-          new Date(a.movementDate).getTime() -
-          new Date(b.movementDate).getTime()
-      );
-
-      let runningBalance = 0;
-
-      // Prepare data for export
-      const exportData: StockLedgerExportData[] = sortedLedgers.map(
-        (ledger) => {
-          if (ledger.movementType.includes('IN')) {
-            runningBalance += Math.abs(ledger.quantity);
-          } else if (ledger.movementType.includes('OUT')) {
-            runningBalance -= Math.abs(ledger.quantity);
-          }
-
-          return {
-            Date: formatDateTime(ledger.movementDate),
-            Type: ledger.movementType,
-            Batch: ledger.batch?.batchNumber || 'N/A',
-            Location: ledger.store
-              ? `Store: ${ledger.store.name}`
-              : ledger.shop
-                ? `Shop: ${ledger.shop.name}`
-                : 'N/A',
-            Branch:
-              ledger.store?.branch?.name || ledger.shop?.branch?.name || 'N/A',
-            In: ledger.movementType.includes('IN')
-              ? `${ledger.quantity} ${ledger.unitOfMeasure?.symbol || unitSymbol}`
-              : '-',
-            Out: ledger.movementType.includes('OUT')
-              ? `${Math.abs(ledger.quantity)} ${ledger.unitOfMeasure?.symbol || unitSymbol}`
-              : '-',
-            Balance: `${runningBalance} ${ledger.unitOfMeasure?.symbol || unitSymbol}`,
-            'Reference/Invoice': ledger.invoiceNo || ledger.reference || 'N/A',
-            User: ledger.user?.name || 'System',
-            Notes: ledger.notes || 'N/A'
-          };
-        }
-      );
-
-      // Calculate final balance
-      const finalBalance = filteredStockLedgers.reduce((balance, ledger) => {
-        if (ledger.movementType.includes('IN')) {
-          return balance + Math.abs(ledger.quantity);
-        } else if (ledger.movementType.includes('OUT')) {
-          return balance - Math.abs(ledger.quantity);
-        }
-        return balance;
-      }, 0);
-
-      const finalBalanceText = `${finalBalance} ${unitSymbol}`;
-      const filename = `${product.productCode}_${product.name}_Stock_Ledger_${format(new Date(), 'yyyy-MM-dd_HH-mm')}`;
-
-      // Export to Excel
-      exportToExcel(exportData, filename, finalBalanceText);
-
-      toast.success('Excel file downloaded successfully');
-    } catch  {
-      toast.error('Failed to export Excel file');
+ const handleExportExcel = () => {
+  try {
+    if (!productDetails || filteredStockLedgers.length === 0) {
+      toast.error('No data to export');
+      return;
     }
-  };
+
+    // Sort ledgers for export
+    const sortedLedgers = [...filteredStockLedgers].sort(
+      (a, b) =>
+        new Date(a.movementDate).getTime() -
+        new Date(b.movementDate).getTime()
+    );
+
+    let runningBalance = 0;
+
+    // Prepare data for export
+    const exportData: StockLedgerExportData[] = sortedLedgers.map(
+      (ledger) => {
+        if (ledger.movementType.includes('IN')) {
+          runningBalance += Math.abs(ledger.quantity);
+        } else if (ledger.movementType.includes('OUT')) {
+          runningBalance -= Math.abs(ledger.quantity);
+        }
+
+        return {
+          Date: formatDateTime(ledger.movementDate),
+          Type: ledger.movementType,
+          Batch: ledger.batch?.batchNumber || 'N/A',
+          Location: ledger.store
+            ? `Store: ${ledger.store.name}`
+            : ledger.shop
+              ? `Shop: ${ledger.shop.name}`
+              : 'N/A',
+          Branch:
+            ledger.store?.branch?.name || ledger.shop?.branch?.name || 'N/A',
+          In: ledger.movementType.includes('IN')
+            ? `${ledger.quantity} ${ledger.unitOfMeasure?.symbol || unitSymbol}`
+            : '-',
+          Out: ledger.movementType.includes('OUT')
+            ? `${Math.abs(ledger.quantity)} ${ledger.unitOfMeasure?.symbol || unitSymbol}`
+            : '-',
+          Balance: `${runningBalance} ${ledger.unitOfMeasure?.symbol || unitSymbol}`,
+          'Reference/Invoice': ledger.invoiceNo || ledger.reference || 'N/A',
+          User: ledger.user?.name || 'System',
+          Notes: ledger.notes || 'N/A'
+        };
+      }
+    );
+
+    // Calculate final balance
+    const finalBalance = filteredStockLedgers.reduce((balance, ledger) => {
+      if (ledger.movementType.includes('IN')) {
+        return balance + Math.abs(ledger.quantity);
+      } else if (ledger.movementType.includes('OUT')) {
+        return balance - Math.abs(ledger.quantity);
+      }
+      return balance;
+    }, 0);
+
+    const finalBalanceText = `${finalBalance} ${unitSymbol}`;
+    const filename = `${product.productCode}_${product.name.replace(/\s+/g, '_')}_Stock_Ledger`;
+
+    // Prepare options for export
+    const exportOptions = {
+      productName: product.name,
+      productCode: product.productCode,
+      unitSymbol: unitSymbol,
+      selectedBranch: selectedBranch,
+      finalBalance: finalBalanceText
+    };
+
+    // Export to Excel
+    exportStockLedgerToExcel(exportData, exportOptions, filename);
+
+    toast.success('Excel file downloaded successfully');
+  } catch (error) {
+    console.error('Export error:', error);
+    toast.error('Failed to export Excel file');
+  }
+};
 
   if (!productDetails || !productDetails.product) {
     return (

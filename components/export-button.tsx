@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { IProduct } from '@/models/Product';
-import {exportToExcel } from '@/lib/exportExcel';
+import {exportToExcel } from '@/lib/bb';
 
 interface ExportButtonsProps {
   data: IProduct[];
