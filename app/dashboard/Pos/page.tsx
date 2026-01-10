@@ -10,42 +10,43 @@ import { TopProducts } from '@/service/Product';
 import { useSearchParams } from 'next/navigation';
 
 export default function Page() {
-  const searchParams = useSearchParams();
-  const searchTerm = searchParams?.get('searchTerm') || '';
-  const categoryId = searchParams?.get('categoryId') || '';
-  const subCategoryId = searchParams?.get('subCategoryId') || '';
+const searchParams = useSearchParams();
+const searchTerm = searchParams?.get('searchTerm') || '';
+const categoryName = searchParams?.get('categoryName') || '';
+const subCategoryName = searchParams?.get('subCategoryName') || '';
 
-  const [products, setProducts] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [subCategories, setSubCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+const [products, setProducts] = useState<any[]>([]);
+const [categories, setCategories] = useState<any[]>([]);
+const [subCategories, setSubCategories] = useState<any[]>([]);
+const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [productsData, categoriesData, subCategoriesData] =
-          await Promise.all([
-            TopProducts({
-              searchTerm: searchTerm || undefined,
-              categoryId: categoryId || undefined,
-              subCategoryId: subCategoryId || undefined
-            }),
-            getCategories(),
-            getSubCategories()
-          ]);
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const [productsData, categoriesData, subCategoriesData] =
+        await Promise.all([
+          TopProducts({
+            searchTerm: searchTerm || undefined,
+            categoryName: categoryName || undefined,
+            subCategoryName: subCategoryName || undefined
+          }),
+          getCategories(),
+          getSubCategories()
+        ]);
 
-        setProducts(productsData || []);
-        setCategories(categoriesData || []);
-        setSubCategories(subCategoriesData || []);
-      } catch  {
-      } finally {
-        setLoading(false);
-      }
-    };
+      setProducts(productsData || []);
+      setCategories(categoriesData || []);
+      setSubCategories(subCategoriesData || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      // Handle error appropriately
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchData();
-  }, [searchTerm, categoryId, subCategoryId]); // Add URL parameters as dependencies
-
+  fetchData();
+}, [searchTerm, categoryName, subCategoryName]); // Updated dependencies
   if (loading) {
     return (
       <PageContainer scrollable>
@@ -64,8 +65,8 @@ export default function Page() {
           categories={categories}
           subCategories={subCategories}
           initialSearchTerm={searchTerm}
-          initialCategoryId={categoryId}
-          initialSubCategoryId={subCategoryId}
+          initialCategoryName={categoryName}
+          initialSubCategoryName={subCategoryName}
         />
       </div>
     </PageContainer>

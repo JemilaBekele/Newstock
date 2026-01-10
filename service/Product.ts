@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { IncomingMessage } from 'http';
 import { axiosWithAuth } from './cli';
 import { api } from './api';
@@ -84,21 +85,21 @@ export const ActivegetProducts = async (req?: IncomingMessage) => {
 };
 interface TopProductsOptions {
   searchTerm?: string;
-  categoryId?: string;
-  subCategoryId?: string;
+  categoryName?: string;
+  subCategoryName?: string;
   req?: IncomingMessage;
 }
 
 export const TopProducts = async (options: TopProductsOptions = {}) => {
   try {
-    const { searchTerm, categoryId, subCategoryId, req } = options;
+    const { searchTerm, categoryName, subCategoryName, req } = options;
     const axiosInstance = axiosWithAuth(req);
 
-    // Build query parameters
+    // Build query parameters - using names instead of IDs
     const params: any = {};
     if (searchTerm?.trim()) params.searchTerm = searchTerm.trim();
-    if (categoryId?.trim()) params.categoryId = categoryId.trim();
-    if (subCategoryId?.trim()) params.subCategoryId = subCategoryId.trim();
+    if (categoryName?.trim()) params.categoryName = categoryName.trim();
+    if (subCategoryName?.trim()) params.subCategoryName = subCategoryName.trim();
 
     const response = await axiosInstance.get(
       `/products/get/all/Top/Selling/Products`,

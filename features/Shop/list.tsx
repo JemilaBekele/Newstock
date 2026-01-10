@@ -71,17 +71,17 @@ interface ProductCardProps {
 }
 
 interface ProductSearchProps {
-  products: IProduct[];
-  categories: ICategory[];
-  subCategories: ISubCategory[];
+  products: any[];
+  categories: any[];
+  subCategories: any[];
   initialSearchTerm?: string;
-  initialCategoryId?: string;
-  initialSubCategoryId?: string;
+  initialCategoryName?: string; // Changed from initialCategoryId
+  initialSubCategoryName?: string; // Changed from initialSubCategoryId
 }
 
 interface SearchFilters {
-  category: string;
-  subCategory: string;
+  category: string; // Now stores category name instead of ID
+  subCategory: string; // Now stores subcategory name instead of ID
   productName: string;
 }
 
@@ -1489,15 +1489,14 @@ const Cart = ({
   );
 };
 
-// ProductSearch Component with URL synchronization
-// ProductSearch Component with URL synchronization
+
 export const ProductSearch = ({
   products,
   categories,
   subCategories,
   initialSearchTerm = '',
-  initialCategoryId = 'all',
-  initialSubCategoryId = 'all'
+  initialCategoryName = 'all',
+  initialSubCategoryName = 'all'
 }: ProductSearchProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1505,13 +1504,13 @@ export const ProductSearch = ({
   // Initialize state with props directly
   const [searchFilters, setSearchFilters] = useState<SearchFilters>(() => {
     // Use URL params first, then fall back to initial props
-    const urlCategory = searchParams.get('categoryId');
-    const urlSubCategory = searchParams.get('subCategoryId');
+    const urlCategory = searchParams.get('categoryName') || searchParams.get('categoryId'); // Support both
+    const urlSubCategory = searchParams.get('subCategoryName') || searchParams.get('subCategoryId'); // Support both
     const urlSearchTerm = searchParams.get('searchTerm');
     
     return {
-      category: urlCategory || initialCategoryId || 'all',
-      subCategory: urlSubCategory || initialSubCategoryId || 'all',
+      category: urlCategory || initialCategoryName || 'all',
+      subCategory: urlSubCategory || initialSubCategoryName || 'all',
       productName: urlSearchTerm || initialSearchTerm || ''
     };
   });
@@ -1521,29 +1520,34 @@ export const ProductSearch = ({
     if (searchFilters.category === 'all') {
       return subCategories || [];
     } else {
-      return (subCategories || []).filter(
-        (subCat) => subCat.categoryId === searchFilters.category
-      );
+      // Find category by name to get its ID for filtering subcategories
+      const selectedCategory = categories.find(cat => cat.name === searchFilters.category);
+      if (selectedCategory) {
+        return (subCategories || []).filter(
+          (subCat) => subCat.categoryId === selectedCategory.id
+        );
+      }
+      return [];
     }
-  }, [searchFilters.category, subCategories]);
+  }, [searchFilters.category, subCategories, categories]);
 
   // Compute filteredProducts directly from state and props
   const filteredProducts = useMemo(() => {
     let filtered = products || [];
 
-    // Filter by category
+    // Filter by category name
     if (searchFilters.category !== 'all') {
       filtered = filtered.filter((product) => {
-        const productCategoryId = product.categoryId || product.category?.id;
-        return productCategoryId === searchFilters.category;
+        const productCategoryName = product.category?.name || product.category;
+        return productCategoryName === searchFilters.category;
       });
     }
 
-    // Filter by subcategory
+    // Filter by subcategory name
     if (searchFilters.subCategory !== 'all') {
       filtered = filtered.filter((product) => {
-        const subCategoryId = product.subCategoryId || product.subCategory?.id;
-        return subCategoryId === searchFilters.subCategory;
+        const subCategoryName = product.subCategory?.name || product.subCategory;
+        return subCategoryName === searchFilters.subCategory;
       });
     }
 
@@ -1580,15 +1584,15 @@ export const ProductSearch = ({
     }
 
     if (searchFilters.category !== 'all') {
-      params.set('categoryId', searchFilters.category);
+      params.set('categoryName', searchFilters.category);
     } else {
-      params.delete('categoryId');
+      params.delete('categoryName');
     }
 
     if (searchFilters.subCategory !== 'all') {
-      params.set('subCategoryId', searchFilters.subCategory);
+      params.set('subCategoryName', searchFilters.subCategory);
     } else {
-      params.delete('subCategoryId');
+      params.delete('subCategoryName');
     }
 
     // Update URL without page refresh using Next.js router
@@ -1605,7 +1609,7 @@ export const ProductSearch = ({
   useEffect(() => {
     if (
       searchFilters.subCategory !== 'all' &&
-      !filteredSubCategories.some((subCat) => subCat.id === searchFilters.subCategory)
+      !filteredSubCategories.some((subCat) => subCat.name === searchFilters.subCategory)
     ) {
       // Use setTimeout to avoid state update during render
       setTimeout(() => {
@@ -1633,7 +1637,7 @@ export const ProductSearch = ({
       // If category changed and subcategory is no longer valid, reset it
       if (key === 'category' && value !== 'all') {
         const isValidSubCategory = filteredSubCategories.some(
-          (subCat) => subCat.id === prev.subCategory
+          (subCat) => subCat.name === prev.subCategory
         );
         if (!isValidSubCategory) {
           newFilters.subCategory = 'all';
@@ -1748,7 +1752,7 @@ export const ProductSearch = ({
                   {categories.map((category) => (
                     <SelectItem
                       key={category.id}
-                      value={category.id}
+                      value={category.name}
                       className='text-xs sm:text-sm'
                     >
                       {category.name}
@@ -1759,35 +1763,40 @@ export const ProductSearch = ({
             </div>
 
             {/* Subcategory Select */}
-            <div>
-              <label className='mb-1 block text-xs font-medium sm:mb-2 sm:text-sm'>
-                Subcategory
-              </label>
-              <Select
-                value={searchFilters.subCategory}
-                onValueChange={(value) =>
-                  handleFilterChange('subCategory', value)
-                }
-              >
-                <SelectTrigger className='w-full text-xs sm:text-sm'>
-                  <SelectValue placeholder='Select subcategory' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='all' className='text-xs sm:text-sm'>
-                    All Subcategories
-                  </SelectItem>
-                  {filteredSubCategories.map((subCategory) => (
-                    <SelectItem
-                      key={subCategory.id}
-                      value={subCategory.id}
-                      className='text-xs sm:text-sm'
-                    >
-                      {subCategory.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+           <div>
+  <label className='mb-1 block text-xs font-medium sm:mb-2 sm:text-sm'>
+    Subcategory
+  </label>
+  <Select
+    value={searchFilters.subCategory}
+    onValueChange={(value) =>
+      handleFilterChange('subCategory', value)
+    }
+  >
+    <SelectTrigger className='w-full text-xs sm:text-sm'>
+      <SelectValue placeholder='Select subcategory' />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value='all' className='text-xs sm:text-sm'>
+        All Subcategories
+      </SelectItem>
+      {/* Group by name and show only unique names */}
+      {Array.from(
+        new Map(
+          filteredSubCategories.map(subCat => [subCat.name, subCat])
+        ).values() // This keeps the first occurrence of each unique name
+      ).map((subCategory) => (
+        <SelectItem
+          key={subCategory.id}
+          value={subCategory.name} // Just the name for display/filtering
+          className='text-xs sm:text-sm'
+        >
+          {subCategory.name}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+</div>
 
             {/* Product Name Search */}
             <div>
