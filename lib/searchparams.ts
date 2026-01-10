@@ -45,7 +45,8 @@ export const searchParams = {
   limit: parseAsInteger.withDefault(10),
   startDate: parseAsNullableIsoDateWithDefault,
   endDate: parseAsNullableIsoDateWithDefault,
-  status: parseAsString
+  status: parseAsString,
+  employee: parseAsString
 };
 
 export const searchParamsCache = createSearchParamsCache(searchParams);

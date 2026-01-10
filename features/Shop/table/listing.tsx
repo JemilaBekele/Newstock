@@ -1,138 +1,21 @@
+/* eslint-disable react-hooks/static-components */
 /* eslint-disable react-hooks/error-boundaries */
 import { searchParamsCache } from '@/lib/searchparams';
 import { DataTable } from '@/components/ui/table/newdatatable';
 import { getAllSells } from '@/service/Sell';
 import { sellColumns } from './tables/columns';
 import { SaleStatus } from '@/models/Sell';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { AlertCircle, Clock, Check } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
+import { AlertCircle } from 'lucide-react';
+import { RadioGroup } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import ExportButtons from '@/components/ExportButtonsd';
+import { StatusCard } from '../userbased/listing';
+import {  getAllEmployapi } from '@/service/employee';
+import { IEmployee } from '@/models/employee';
+import EmployeeFilter from './employee'; // Import the client component
 
 type SellListingPageProps = object;
-
-function StatusCard({
-  title,
-  count,
-  variant = 'default',
-  needsAttention = false,
-  selected = false,
-  href,
-  value
-}: {
-  title: string;
-  count: number;
-  variant?:
-    | 'default'
-    | 'approved'
-    | 'notApproved'
-    | 'partial'
-    | 'delivered'
-    | 'cancelled'
-    | 'total';
-  needsAttention?: boolean;
-  selected?: boolean;
-  href: string;
-  value?: string;
-}) {
-  const variantStyles = {
-    default: 'border-border bg-card',
-    total: 'border-border bg-card',
-    approved:
-      'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20',
-    notApproved: needsAttention
-      ? 'border-amber-300 bg-amber-50 dark:border-amber-600 dark:bg-amber-950/40 shadow-md ring-1 ring-amber-200 dark:ring-amber-800'
-      : 'border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950/20',
-    partial:
-      'border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/20',
-    delivered:
-      'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20',
-    cancelled: 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20'
-  };
-
-  const selectedStyles = selected
-    ? 'ring-2 ring-primary ring-offset-2 ring-offset-background'
-    : '';
-
-  const textColors = {
-    default: 'text-foreground',
-    total: 'text-foreground',
-    approved: 'text-blue-700 dark:text-blue-400',
-    notApproved: needsAttention
-      ? 'text-amber-800 dark:text-amber-300'
-      : 'text-gray-700 dark:text-gray-400',
-    partial: 'text-orange-700 dark:text-orange-400',
-    delivered: 'text-green-700 dark:text-green-400',
-    cancelled: 'text-red-700 dark:text-red-400'
-  };
-
-  const iconColors = {
-    notApproved: needsAttention
-      ? 'text-amber-600 dark:text-amber-400'
-      : 'text-gray-500'
-  };
-
-  return (
-    <Link href={href} className='block'>
-      <Card
-        className={`relative cursor-pointer transition-all hover:shadow-md ${variantStyles[variant]} ${selectedStyles} ${needsAttention ? 'animate-pulse' : ''}`}
-      >
-        <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-          <div className='flex items-center gap-2'>
-            <RadioGroupItem
-              value={value || ''}
-              id={`status-${value}`}
-              className='h-4 w-4'
-              checked={selected}
-            />
-            <Label
-              htmlFor={`status-${value}`}
-              className={`text-sm font-medium ${textColors[variant]} cursor-pointer`}
-            >
-              {title}
-            </Label>
-          </div>
-          {variant === 'notApproved' && needsAttention && count > 0 && (
-            <div className='flex items-center'>
-              <AlertCircle className={`h-4 w-4 ${iconColors.notApproved}`} />
-            </div>
-          )}
-        </CardHeader>
-        <CardContent>
-          <div className='flex items-center justify-between'>
-            <div className={`text-2xl font-bold ${textColors[variant]}`}>
-              {count}
-            </div>
-            {selected && (
-              <Badge variant='secondary' className='flex items-center gap-1'>
-                <Check className='h-3 w-3' />
-                Selected
-              </Badge>
-            )}
-            {variant === 'notApproved' && needsAttention && count > 0 && (
-              <div className='flex items-center'>
-                <Clock className={`h-4 w-4 ${iconColors.notApproved}`} />
-                <span className={`text-xs ${textColors.notApproved}`}>
-                  Needs approval
-                </span>
-              </div>
-            )}
-          </div>
-          {variant === 'notApproved' && needsAttention && count > 0 && (
-            <div
-              className={`mt-1 text-xs ${textColors.notApproved} font-medium`}
-            >
-              Action required
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </Link>
-  );
-}
 
 export default async function SellListingPage({}: SellListingPageProps) {
   const getSaleStatusDisplayText = (status: SaleStatus): string => {
@@ -153,7 +36,7 @@ export default async function SellListingPage({}: SellListingPageProps) {
   };
 
   // ────────────────────────────────────────────────────────────────
-  // Query‑string inputs - Add status filter
+  // Query‑string inputs - Add employee filter
   // ────────────────────────────────────────────────────────────────
   const page = searchParamsCache.get('page') || 1;
   const search = searchParamsCache.get('q') || '';
@@ -161,99 +44,126 @@ export default async function SellListingPage({}: SellListingPageProps) {
   const startDate = searchParamsCache.get('startDate');
   const endDate = searchParamsCache.get('endDate');
   const statusFilter = searchParamsCache.get('status') || 'all';
+  const employeeFilter = searchParamsCache.get('employee') || 'all';
 
   // Helper function to build query strings
-  const buildQueryString = (status: string) => {
-    const params = new URLSearchParams();
+  const buildQueryStringLocal = (params: {
+    status?: string;
+    employee?: string;
+    page?: string;
+  }) => {
+    const urlParams = new URLSearchParams();
 
     // Always include search if it exists
-    if (search) params.set('q', search);
+    if (search) urlParams.set('q', search);
 
-    // Always reset to page 1 when changing status
-    params.set('page', '1');
+    // Set page (default to 1 when changing filters)
+    urlParams.set('page', params.page || '1');
 
     // Include limit
-    params.set('limit', limit.toString());
+    urlParams.set('limit', limit.toString());
 
     // Include date filters if they exist
-    if (startDate) params.set('startDate', startDate);
-    if (endDate) params.set('endDate', endDate);
+    if (startDate) urlParams.set('startDate', startDate);
+    if (endDate) urlParams.set('endDate', endDate);
 
     // Set status
-    params.set('status', status);
+    urlParams.set('status', params.status || statusFilter);
 
-    return `?${params.toString()}`;
+    // Set employee - ensure it's a string
+    const employeeValue = params.employee || employeeFilter;
+    urlParams.set('employee', employeeValue.toString());
+
+    return `?${urlParams.toString()}`;
+  };
+
+  // Build status filter URL helper (for StatusCard links)
+  const buildStatusFilterUrl = (status: string) => {
+    return buildQueryStringLocal({
+      status: status,
+      employee: employeeFilter,
+      page: '1'
+    });
   };
 
   try {
     // Fetch data from API
-    const { data } = await getAllSells({
+    const { data: salesData } = await getAllSells({
       page,
       limit,
       startDate,
       endDate
     });
 
+    // Fetch employees for the dropdown
+    const employees = await getAllEmployapi().catch(() => []);
+
     // ────────────────────────────────────────────────────────────────
-    // Client‑side search filter with status filtering
+    // Client‑side search filter with status AND employee filtering
     // ────────────────────────────────────────────────────────────────
-    let filteredData = data.filter((item) => {
-      if (!search) return true;
-      const searchLower = search.toLowerCase();
+    const filteredData = salesData.filter((item) => {
+      // Apply search filter
+      if (search) {
+        const searchLower = search.toLowerCase();
+        const invoiceMatch = item.invoiceNo?.toLowerCase().includes(searchLower);
+        const customerMatch = item.customer?.name?.toLowerCase().includes(searchLower);
+        const createdByMatch = item.createdBy?.name?.toLowerCase().includes(searchLower);
+        const saleStatusDisplayText = getSaleStatusDisplayText(item.saleStatus);
+        const saleStatusMatch = saleStatusDisplayText.includes(searchLower);
+        const saleStatusEnumMatch = item.saleStatus.includes(search);
 
-      // Check invoice number (case-sensitive)
-      const invoiceMatch = item.invoiceNo?.toLowerCase().includes(searchLower);
+        if (!(invoiceMatch || customerMatch || createdByMatch || saleStatusMatch || saleStatusEnumMatch)) {
+          return false;
+        }
+      }
 
-      // Check customer name (case-sensitive)
-      const customerMatch = item.customer?.name?.toLowerCase().includes(searchLower);
-      const createdByMatch = item.createdBy?.name?.toLowerCase().includes(searchLower);
+      // Apply status filter
+      if (statusFilter !== 'all' && item.saleStatus !== statusFilter) {
+        return false;
+      }
 
-      // Check sale status (case-sensitive)
-      const saleStatusDisplayText = getSaleStatusDisplayText(item.saleStatus);
-      const saleStatusMatch = saleStatusDisplayText.includes(
-        search.toLowerCase()
-      );
+      // Apply employee filter
+      if (employeeFilter !== 'all') {
+        // Check both _id and id for employee matching
+        const employeeId = item.createdBy?.id;
+        if (employeeId !== employeeFilter) {
+          return false;
+        }
+      }
 
-      // Check sale status enum value directly (case-sensitive)
-      const saleStatusEnumMatch = item.saleStatus.includes(search);
-
-      return (
-        invoiceMatch || customerMatch || saleStatusMatch || saleStatusEnumMatch || createdByMatch
-      );
+      return true;
     });
 
-    if (statusFilter !== 'all') {
-      filteredData = filteredData.filter(
-        (item) => item.saleStatus === statusFilter
-      );
-    }
-
     // ────────────────────────────────────────────────────────────────
-    // Count sell statuses (using ALL data, not filtered by status)
+    // Count sell statuses (using ALL data, not filtered by status/employee)
     // ────────────────────────────────────────────────────────────────
     const allStatusCounts = {
-      [SaleStatus.APPROVED]: data.filter(
+      [SaleStatus.APPROVED]: salesData.filter(
         (item) => item.saleStatus === SaleStatus.APPROVED
       ).length,
-      [SaleStatus.NOT_APPROVED]: data.filter(
+      [SaleStatus.NOT_APPROVED]: salesData.filter(
         (item) => item.saleStatus === SaleStatus.NOT_APPROVED
       ).length,
-      [SaleStatus.PARTIALLY_DELIVERED]: data.filter(
+      [SaleStatus.PARTIALLY_DELIVERED]: salesData.filter(
         (item) => item.saleStatus === SaleStatus.PARTIALLY_DELIVERED
       ).length,
-      [SaleStatus.DELIVERED]: data.filter(
+      [SaleStatus.DELIVERED]: salesData.filter(
         (item) => item.saleStatus === SaleStatus.DELIVERED
       ).length,
-      [SaleStatus.CANCELLED]: data.filter(
+      [SaleStatus.CANCELLED]: salesData.filter(
         (item) => item.saleStatus === SaleStatus.CANCELLED
       ).length
     };
 
-    const totalSells = data.length; // All sells, not filtered
+    const totalSells = salesData.length;
     const needsApprovalCount = allStatusCounts[SaleStatus.NOT_APPROVED];
-
-    // Current filtered count for selected status
     const filteredCount = filteredData.length;
+
+    // Get selected employee name for display
+    const selectedEmployee = employees.find((emp: IEmployee) => {
+      const empId = emp.id;
+      return empId === employeeFilter;
+    });
 
     // ────────────────────────────────────────────────────────────────
     // Client‑side pagination
@@ -264,7 +174,7 @@ export default async function SellListingPage({}: SellListingPageProps) {
 
     return (
       <div className='space-y-6'>
-        {/* Export Buttons */}
+        {/* Export Buttons and Header */}
         <div className="flex items-center justify-between">
           <div className="text-lg font-semibold">Sales Management</div>
           <ExportButtons 
@@ -273,6 +183,17 @@ export default async function SellListingPage({}: SellListingPageProps) {
             totalSells={totalSells}
           />
         </div>
+
+        {/* Employee Filter Dropdown - Client Component */}
+        <EmployeeFilter
+          employees={employees}
+          currentEmployeeFilter={employeeFilter}
+          statusFilter={statusFilter}
+          search={search}
+          limit={limit}
+          startDate={startDate}
+          endDate={endDate}
+        />
 
         {/* Radio Group for Status Filter */}
         <RadioGroup
@@ -287,7 +208,7 @@ export default async function SellListingPage({}: SellListingPageProps) {
               variant='total'
               selected={statusFilter === 'all'}
               value='all'
-              href={buildQueryString('all')}
+              href={buildStatusFilterUrl('all')}
             />
             <StatusCard
               title='Approved'
@@ -295,7 +216,7 @@ export default async function SellListingPage({}: SellListingPageProps) {
               variant='approved'
               selected={statusFilter === SaleStatus.APPROVED}
               value={SaleStatus.APPROVED}
-              href={buildQueryString(SaleStatus.APPROVED)}
+              href={buildStatusFilterUrl(SaleStatus.APPROVED)}
             />
             <StatusCard
               title='Not Approved'
@@ -304,7 +225,7 @@ export default async function SellListingPage({}: SellListingPageProps) {
               needsAttention={allStatusCounts[SaleStatus.NOT_APPROVED] > 0}
               selected={statusFilter === SaleStatus.NOT_APPROVED}
               value={SaleStatus.NOT_APPROVED}
-              href={buildQueryString(SaleStatus.NOT_APPROVED)}
+              href={buildStatusFilterUrl(SaleStatus.NOT_APPROVED)}
             />
             <StatusCard
               title='Partially Delivered'
@@ -312,7 +233,7 @@ export default async function SellListingPage({}: SellListingPageProps) {
               variant='partial'
               selected={statusFilter === SaleStatus.PARTIALLY_DELIVERED}
               value={SaleStatus.PARTIALLY_DELIVERED}
-              href={buildQueryString(SaleStatus.PARTIALLY_DELIVERED)}
+              href={buildStatusFilterUrl(SaleStatus.PARTIALLY_DELIVERED)}
             />
             <StatusCard
               title='Delivered'
@@ -320,7 +241,7 @@ export default async function SellListingPage({}: SellListingPageProps) {
               variant='delivered'
               selected={statusFilter === SaleStatus.DELIVERED}
               value={SaleStatus.DELIVERED}
-              href={buildQueryString(SaleStatus.DELIVERED)}
+              href={buildStatusFilterUrl(SaleStatus.DELIVERED)}
             />
             <StatusCard
               title='Cancelled'
@@ -328,29 +249,46 @@ export default async function SellListingPage({}: SellListingPageProps) {
               variant='cancelled'
               selected={statusFilter === SaleStatus.CANCELLED}
               value={SaleStatus.CANCELLED}
-              href={buildQueryString(SaleStatus.CANCELLED)}
+              href={buildStatusFilterUrl(SaleStatus.CANCELLED)}
             />
           </div>
         </RadioGroup>
 
         {/* Filter Status Display */}
-        {statusFilter !== 'all' && (
+        {(statusFilter !== 'all' || employeeFilter !== 'all') && (
           <div className='bg-muted/50 rounded-lg border p-4'>
             <div className='flex items-center justify-between'>
-              <div className='flex items-center gap-2'>
+              <div className='flex flex-wrap items-center gap-2'>
                 <Badge variant='outline' className='text-sm'>
-                  Filter Applied
+                  Filters Applied
                 </Badge>
+                
+                {statusFilter !== 'all' && (
+                  <Badge variant="secondary" className="text-sm">
+                    Status: {getSaleStatusDisplayText(statusFilter as SaleStatus)}
+                  </Badge>
+                )}
+                
+                {employeeFilter !== 'all' && selectedEmployee && (
+                  <Badge variant="secondary" className="text-sm">
+                    Employee: {selectedEmployee.name}
+                  </Badge>
+                )}
+                
                 <span className='text-muted-foreground text-sm'>
-                  Showing {filteredCount} {statusFilter.toLowerCase()} sale
-                  {filteredCount === 1 ? '' : 's'}
+                  Showing {filteredCount} sale{filteredCount === 1 ? '' : 's'}
                 </span>
               </div>
+              
               <Link
-                href={buildQueryString('all')}
+                href={buildQueryStringLocal({
+                  status: 'all',
+                  employee: 'all',
+                  page: '1'
+                })}
                 className='text-primary text-sm hover:underline'
               >
-                Clear Filter
+                Clear All Filters
               </Link>
             </div>
           </div>
@@ -376,18 +314,20 @@ export default async function SellListingPage({}: SellListingPageProps) {
         {/* Data Table */}
         <DataTable
           data={paginatedData}
-          totalItems={filteredCount} // Use filtered count for pagination
+          totalItems={filteredCount}
           columns={sellColumns}
           currentPage={page}
           itemsPerPage={limit}
           searchValue={search}
           statusFilter={statusFilter}
+          employeeFilter={employeeFilter}
           startDate={startDate}
           endDate={endDate}
         />
       </div>
     );
-  } catch{
+  } catch (error) {
+    console.error('Error loading sells:', error);
     return (
       <div className='p-4 text-red-500'>
         Error loading sells. Please try again later.

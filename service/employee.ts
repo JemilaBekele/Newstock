@@ -63,6 +63,14 @@ export const getAllEmploy = async (req?: IncomingMessage) => {
     throw error;
   }
 };
+export const getAllEmployapi = async () => {
+  try {
+    const response = await api.get(`/users`);
+    return response.data.users;
+  } catch (error) {
+    throw error;
+  }
+};
 export const getUserProfile = async (req?: IncomingMessage) => {
   try {
     const axiosInstance = axiosWithAuth(req);

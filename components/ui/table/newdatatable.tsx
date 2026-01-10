@@ -42,6 +42,7 @@ interface DataTableProps<TData, TValue> {
   itemsPerPage?: number;
   searchValue?: string;
   statusFilter?: string | number;
+  employeeFilter?: string | number;
   startDate?: string;
   endDate?: string;
 }

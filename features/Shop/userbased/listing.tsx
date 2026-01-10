@@ -14,7 +14,7 @@ import Link from 'next/link';
 type SellListingPageProps = object;
 
 // Status card component
-function StatusCard({
+export function StatusCard({
   title,
   count,
   variant = 'default',
