@@ -11,9 +11,10 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import ExportButtons from '@/components/ExportButtonsd';
 import { StatusCard } from '../userbased/listing';
-import {  getAllEmployapi } from '@/service/employee';
+import { getAllEmployapi } from '@/service/employee';
 import { IEmployee } from '@/models/employee';
-import EmployeeFilter from './employee'; // Import the client component
+import EmployeeFilter from './employee';
+import UncheckedCorrectionsFilter from './UncheckedCorrectionsFilter'; // Import the client component
 
 type SellListingPageProps = object;
 
@@ -45,11 +46,13 @@ export default async function SellListingPage({}: SellListingPageProps) {
   const endDate = searchParamsCache.get('endDate');
   const statusFilter = searchParamsCache.get('status') || 'all';
   const employeeFilter = searchParamsCache.get('employee') || 'all';
+  const uncheckedCorrectionsFilter = searchParamsCache.get('unchecked') === 'true';
 
   // Helper function to build query strings
   const buildQueryStringLocal = (params: {
     status?: string;
     employee?: string;
+    unchecked?: boolean;
     page?: string;
   }) => {
     const urlParams = new URLSearchParams();
@@ -74,6 +77,14 @@ export default async function SellListingPage({}: SellListingPageProps) {
     const employeeValue = params.employee || employeeFilter;
     urlParams.set('employee', employeeValue.toString());
 
+    // Set unchecked corrections filter
+    const uncheckedValue = params.unchecked !== undefined ? params.unchecked : uncheckedCorrectionsFilter;
+    if (uncheckedValue) {
+      urlParams.set('unchecked', 'true');
+    } else {
+      urlParams.delete('unchecked');
+    }
+
     return `?${urlParams.toString()}`;
   };
 
@@ -82,6 +93,7 @@ export default async function SellListingPage({}: SellListingPageProps) {
     return buildQueryStringLocal({
       status: status,
       employee: employeeFilter,
+      unchecked: uncheckedCorrectionsFilter,
       page: '1'
     });
   };
@@ -131,8 +143,24 @@ export default async function SellListingPage({}: SellListingPageProps) {
         }
       }
 
+      // Apply unchecked corrections filter
+      if (uncheckedCorrectionsFilter) {
+        // Check if the sell has any unchecked stock corrections
+        const hasUncheckedCorrections = item.SellStockCorrection?.some(
+          (correction) => !correction.isChecked
+        );
+        if (!hasUncheckedCorrections) {
+          return false;
+        }
+      }
+
       return true;
     });
+
+    // Count sells with unchecked corrections
+    const uncheckedCorrectionsCount = salesData.filter((item) => {
+      return item.SellStockCorrection?.some((correction) => !correction.isChecked);
+    }).length;
 
     // ────────────────────────────────────────────────────────────────
     // Count sell statuses (using ALL data, not filtered by status/employee)
@@ -193,7 +221,25 @@ export default async function SellListingPage({}: SellListingPageProps) {
           limit={limit}
           startDate={startDate}
           endDate={endDate}
+          uncheckedCorrectionsFilter={uncheckedCorrectionsFilter}
         />
+
+        {/* Additional Filters Section */}
+        <div className="rounded-lg border bg-card p-4">
+          <div className="flex flex-wrap items-center gap-6">
+            {/* Unchecked Corrections Filter - Client Component */}
+            <UncheckedCorrectionsFilter
+              isChecked={uncheckedCorrectionsFilter}
+              count={uncheckedCorrectionsCount}
+              search={search}
+              limit={limit}
+              startDate={startDate}
+              endDate={endDate}
+              statusFilter={statusFilter}
+              employeeFilter={employeeFilter}
+            />
+          </div>
+        </div>
 
         {/* Radio Group for Status Filter */}
         <RadioGroup
@@ -255,7 +301,7 @@ export default async function SellListingPage({}: SellListingPageProps) {
         </RadioGroup>
 
         {/* Filter Status Display */}
-        {(statusFilter !== 'all' || employeeFilter !== 'all') && (
+        {(statusFilter !== 'all' || employeeFilter !== 'all' || uncheckedCorrectionsFilter) && (
           <div className='bg-muted/50 rounded-lg border p-4'>
             <div className='flex items-center justify-between'>
               <div className='flex flex-wrap items-center gap-2'>
@@ -275,6 +321,12 @@ export default async function SellListingPage({}: SellListingPageProps) {
                   </Badge>
                 )}
                 
+                {uncheckedCorrectionsFilter && (
+                  <Badge className="text-sm">
+                    Unchecked Corrections Only
+                  </Badge>
+                )}
+                
                 <span className='text-muted-foreground text-sm'>
                   Showing {filteredCount} sale{filteredCount === 1 ? '' : 's'}
                 </span>
@@ -284,6 +336,7 @@ export default async function SellListingPage({}: SellListingPageProps) {
                 href={buildQueryStringLocal({
                   status: 'all',
                   employee: 'all',
+                  unchecked: false,
                   page: '1'
                 })}
                 className='text-primary text-sm hover:underline'
@@ -294,7 +347,7 @@ export default async function SellListingPage({}: SellListingPageProps) {
           </div>
         )}
 
-        {/* Attention Banner if there are pending approvals */}
+        {/* Attention Banners */}
         {needsApprovalCount > 0 && (
           <div className='rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/20'>
             <div className='flex items-center gap-2'>
@@ -311,6 +364,34 @@ export default async function SellListingPage({}: SellListingPageProps) {
           </div>
         )}
 
+        {/* Unchecked Corrections Attention Banner */}
+        {uncheckedCorrectionsCount > 0 && !uncheckedCorrectionsFilter && (
+          <div className='rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/20'>
+            <div className='flex items-center justify-between'>
+              <div className='flex items-center gap-2'>
+                <AlertCircle className='h-5 w-5 text-blue-600 dark:text-blue-400' />
+                <h3 className='font-semibold text-blue-800 dark:text-blue-300'>
+                  Stock Corrections Need Checking
+                </h3>
+              </div>
+              <Link
+                href={buildQueryStringLocal({
+                  unchecked: true,
+                  page: '1'
+                })}
+                className='text-blue-600 text-sm hover:underline dark:text-blue-400'
+              >
+                View All
+              </Link>
+            </div>
+            <p className='mt-1 text-sm text-blue-700 dark:text-blue-400'>
+              You have {uncheckedCorrectionsCount} sell
+              {uncheckedCorrectionsCount === 1 ? '' : 's'} with unchecked stock corrections.
+              Please review and mark them as checked.
+            </p>
+          </div>
+        )}
+
         {/* Data Table */}
         <DataTable
           data={paginatedData}
@@ -321,6 +402,7 @@ export default async function SellListingPage({}: SellListingPageProps) {
           searchValue={search}
           statusFilter={statusFilter}
           employeeFilter={employeeFilter}
+          uncheckedCorrectionsFilter={uncheckedCorrectionsFilter}
           startDate={startDate}
           endDate={endDate}
         />

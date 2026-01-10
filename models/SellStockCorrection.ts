@@ -13,6 +13,7 @@ export enum SellStockCorrectionStatus {
 
 export interface ISellStockCorrection {
   id: string;
+isChecked: boolean;
 
   sellId?: string;
   sell?: ISell;
@@ -23,7 +24,6 @@ export interface ISellStockCorrection {
   notes?: string;
 
   total: number;
-
   createdById?: string;
   createdBy?: IEmployee;
 

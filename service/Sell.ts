@@ -143,6 +143,15 @@ export const getSellById = async (id: string, req?: IncomingMessage) => {
     throw error;
   }
 };
+export const getSellByIds = async (id: string, req?: IncomingMessage) => {
+  try {
+    const axiosInstance = axiosWithAuth(req) 
+    const response = await axiosInstance.get(`/sells/${id}`);
+    return response.data.sell as ISell;
+  } catch (error) {
+    throw error;
+  }
+};
 // ✅ Get sell by ID but user-based
 export const getSellByIdByUser = async (id: string, req?: IncomingMessage) => {
   try {

@@ -4,6 +4,7 @@ import { axiosWithAuth } from './cli';
 import { api } from './api';
 import { PaginationParams } from './store';
 import { ISellStockCorrection } from '@/models/SellStockCorrection';
+import { Console } from 'console';
 
 // 🔹 API Response type
 interface SellStockCorrectionResponse {
@@ -191,7 +192,20 @@ export const rejectSellStockCorrection = async (
     throw error;
   }
 };
-
+export const markAsCheckedSellStockCorrection = async (
+  id: string,
+  req?: IncomingMessage
+) => {
+  try {
+    const axiosInstance = axiosWithAuth(req);
+    const response = await axiosInstance.patch(
+      `/sells/${id}/check/sellcorrection`
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
 // ✅ Delete sell stock correction
 export const deleteSellStockCorrection = async (
   id: string,

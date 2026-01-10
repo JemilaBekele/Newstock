@@ -46,7 +46,8 @@ export const searchParams = {
   startDate: parseAsNullableIsoDateWithDefault,
   endDate: parseAsNullableIsoDateWithDefault,
   status: parseAsString,
-  employee: parseAsString
+  employee: parseAsString,
+  unchecked: parseAsString
 };
 
 export const searchParamsCache = createSearchParamsCache(searchParams);

@@ -2,11 +2,12 @@
 
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
-import { CalendarDays } from 'lucide-react';
+import { AlertCircle, CalendarDays, Check } from 'lucide-react';
 import { SellCellAction } from './cell-action';
 import { ISell, SaleStatus } from '@/models/Sell';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export const getSaleStatusColor = (status: SaleStatus) => {
   switch (status) {
@@ -138,37 +139,74 @@ export const sellColumns: ColumnDef<ISell>[] = [
   cell: ({ cell }) => {
     const corrections = cell.getValue<ISell['SellStockCorrection']>();
     
-    // If no corrections or empty array
     if (!corrections || corrections.length === 0) {
-      return <div>-</div>;
+      return <div className="text-gray-400">-</div>;
     }
 
-    // Get the first correction (assuming there might be multiple)
-    const firstCorrection = corrections[0];
+    // For now, just show the status without check information
+    const firstStatus = corrections[0]?.status || 'UNKNOWN';
+    const hasMultiple = corrections.length > 1;
     
-    // Format the status display
-    const getStatusBadge = (status: string) => {
-      switch (status) {
-        case 'PENDING':
-          return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
-        case 'APPROVED':
-          return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Approved</Badge>;
-        case 'PARTIAL':
-          return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Partial</Badge>;
-        case 'REJECTED':
-          return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>;
-        default:
-          return <Badge variant="outline">{status}</Badge>;
-      }
-    };
+    // If you want to show a count of different statuses
+    const statusCounts = corrections.reduce((acc, correction) => {
+      const status = correction.status || 'UNKNOWN';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    const hasMultipleStatuses = Object.keys(statusCounts).length > 1;
 
     return (
-      <div className="flex items-center gap-2">
-        {getStatusBadge(firstCorrection.status)}
-        {corrections.length > 1 && (
-          <Badge variant="secondary" className="ml-1">
-            +{corrections.length - 1}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <Badge 
+            variant="outline" 
+            className={`
+              font-medium
+              ${firstStatus === 'PENDING'
+                ? "bg-yellow-100 text-yellow-800 border-yellow-300"
+                : firstStatus === 'APPROVED'
+                ? "bg-green-100 text-green-800 border-green-300"
+                : firstStatus === 'PARTIAL'
+                ? "bg-blue-100 text-blue-800 border-blue-300"
+                : firstStatus === 'REJECTED'
+                ? "bg-red-100 text-red-800 border-red-300"
+                : "bg-purple-100 text-purple-800 border-purple-300"
+              }
+            `}
+          >
+            {firstStatus}
           </Badge>
+          
+          {hasMultiple && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="secondary" className="text-xs cursor-help">
+                    {corrections.length}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="space-y-1 min-w-[120px]">
+                    <div className="font-medium mb-1">Correction Statuses:</div>
+                    {Object.entries(statusCounts).map(([status, count]) => (
+                      <div key={status} className="flex items-center justify-between gap-4">
+                        <span>{status}:</span>
+                        <span>{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
+        
+        {/* Show multiple status indicator */}
+        {hasMultipleStatuses && (
+          <div className="text-xs text-gray-500 flex items-center gap-1">
+            <span>Multiple statuses</span>
+          </div>
         )}
       </div>
     );

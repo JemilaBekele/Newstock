@@ -45,6 +45,7 @@ interface DataTableProps<TData, TValue> {
   employeeFilter?: string | number;
   startDate?: string;
   endDate?: string;
+  uncheckedCorrectionsFilter?: boolean;
 }
 
 export function DataTable<TData, TValue>({

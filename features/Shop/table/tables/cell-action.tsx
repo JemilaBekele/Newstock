@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { AlertModal } from '@/components/modal/alert-modal';
@@ -13,7 +14,7 @@ import {
 import { PermissionGuard } from '@/components/PermissionGuard';
 import { PERMISSIONS } from '@/stores/permissions';
 
-import { IconEdit, IconDotsVertical, IconTrash } from '@tabler/icons-react';
+import { IconEdit, IconDotsVertical, IconTrash, IconCheck } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -49,6 +50,36 @@ export const SellCellAction: React.FC<SellCellActionProps> = ({ data }) => {
     }
   };
 
+  // Filter unchecked stock corrections
+  const uncheckedCorrections = data.SellStockCorrection?.filter(
+    correction => !correction.isChecked
+  ) || [];
+
+  // Get count of unchecked corrections
+  const hasUncheckedCorrections = uncheckedCorrections.length > 0;
+
+  // Handle marking as checked
+  const handleMarkCorrectionChecked = () => {
+    if (!data?.id) {
+      toast.error('Sell ID is missing.');
+      return;
+    }
+
+    if (!hasUncheckedCorrections) {
+      toast.info('No unchecked stock corrections found.');
+      return;
+    }
+
+    // If there's only one unchecked correction, navigate to mark it directly
+    if (uncheckedCorrections.length === 1) {
+      router.push(`/dashboard/Sell/SellCorrectionForm/marek/${data.id}`);
+      return;
+    }
+
+    // If multiple corrections, navigate to selection page
+      router.push(`/dashboard/Sell/SellCorrectionForm/marek/${data.id}`);
+  };
+
   return (
     <>
       <AlertModal
@@ -66,6 +97,7 @@ export const SellCellAction: React.FC<SellCellActionProps> = ({ data }) => {
         </DropdownMenuTrigger>
         <DropdownMenuContent align='end'>
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          
           {(data.saleStatus === 'APPROVED' ||
             data.saleStatus === 'NOT_APPROVED') && (
             <PermissionGuard requiredPermission={PERMISSIONS.SELL.UPDATE.name}>
@@ -76,25 +108,42 @@ export const SellCellAction: React.FC<SellCellActionProps> = ({ data }) => {
               </DropdownMenuItem>
             </PermissionGuard>
           )}
+          
           <DropdownMenuItem
             onClick={() => router.push(`/dashboard/Sell/view?id=${data.id}`)}
           >
             <Edit className='mr-2 h-4 w-4' /> View
           </DropdownMenuItem>
+          
           {data.saleStatus === 'DELIVERED' && (
-                        <PermissionGuard requiredPermission={PERMISSIONS.SELL_STOCK_CORRECTION.CREATE.name}>
+            <PermissionGuard requiredPermission={PERMISSIONS.SELL_STOCK_CORRECTION.CREATE.name}>
+              <DropdownMenuItem
+                onClick={() =>
+                  router.push(
+                    `/dashboard/Sell/SellCorrectionForm?id=${data.id}`
+                  )
+                }
+              >
+                <Edit className='mr-2 h-4 w-4' /> Return Sell Correction
+              </DropdownMenuItem>
+            </PermissionGuard>
+          )}
 
-            <DropdownMenuItem
-              onClick={() =>
-                router.push(
-                  `/dashboard/Sell/SellCorrectionForm?id=${data.id}`
-                )
-              }
-            >
-              <Edit className='mr-2 h-4 w-4' /> Return Sell Correction
-            </DropdownMenuItem>
-                        </PermissionGuard>
-
+          {/* Add "Mark Correction as Checked" action */}
+          {hasUncheckedCorrections && (
+            // <PermissionGuard requiredPermission={PERMISSIONS.SELL_STOCK_CORRECTION.MARK_AS_CHECKED.name}>
+              <DropdownMenuItem
+                onClick={handleMarkCorrectionChecked}
+              >
+                <IconCheck className='mr-2 h-4 w-4' />
+                Mark Correction as Checked
+                {uncheckedCorrections.length > 1 && (
+                  <span className="ml-1 text-xs text-muted-foreground">
+                    ({uncheckedCorrections.length} unchecked)
+                  </span>
+                )}
+              </DropdownMenuItem>
+            // </PermissionGuard>
           )}
 
           <PermissionGuard requiredPermission={PERMISSIONS.SELL.DELETE.name}>
